@@ -1,18 +1,16 @@
-var createdRecords;
+var createdRecords, recordCount;
 
 function initApi() {
 
     createdRecords = [];
+    recordCount = 0;
 }
 
 function login(params) {
 
     var result = {"error":null, "data":null};
 	$.ajax({
-        beforeSend: function (request)
-        {
-            request.setRequestHeader("X-DreamFactory-Application-Name", "testapp");
-        },
+        beforeSend: setHeaders,
         type: 'POST',
 		dataType:'json',
         url: hostUrl + '/rest/user/session',
@@ -33,11 +31,7 @@ function logout() {
 
     var result = {"error":null, "data":null};
 	$.ajax({
-        beforeSend: function (request)
-        {
-            request.setRequestHeader("X-DreamFactory-Session-Token", sessionData.session_id);
-            request.setRequestHeader("X-DreamFactory-Application-Name", "testapp");
-        },
+        beforeSend: setHeaders,
         type: 'DELETE',
 		dataType:'json',
         url: hostUrl + '/rest/user/session',
@@ -57,11 +51,7 @@ function getApps() {
 
     var result = {"error":null, "data":null};
     $.ajax({
-	    beforeSend: function (request)
-            {
-                request.setRequestHeader("X-DreamFactory-Session-Token", sessionData.session_id);
-                request.setRequestHeader("X-DreamFactory-Application-Name", "testapp");
-            },
+	    beforeSend: setHeaders,
         dataType:'json',
         url: hostUrl + '/rest/system/app',
         cache:false,
@@ -78,22 +68,18 @@ function getApps() {
 
 function createParams(method, data) {
 
-    params = "fields=*";
-    return {"data":data, "params":params, "method":method};
+    queryParams = "fields=*";
+    return {"data":data, "queryParams":queryParams, "method":method};
 }
 
 function createRecords(params) {
 
     var result = {"error":null, "rawError": null, "data":null};
     $.ajax({
-        beforeSend: function (request)
-        {
-            request.setRequestHeader("X-DreamFactory-Session-Token", sessionData.session_id);
-            request.setRequestHeader("X-DreamFactory-Application-Name", "testapp");
-        },
+        beforeSend: setHeaders,
         type: 'POST',
         dataType:  'json',
-        url: hostUrl + "/rest/" + dbInfo.dbService + "/testobject?" + params.params,
+        url: hostUrl + "/rest/" + dbInfo.dbService + "/testobject?" + params.queryParams,
         data: JSON.stringify(params.data),
         cache: false,
         async: false,
@@ -118,12 +104,12 @@ function createRecords(params) {
     return result;
 }
 
-function getParams(method, indexArray) {
+function getParamsByIds(method, indices) {
 
     var data = null;
-    var params = "";
+    var queryParams = "";
     var url = "/rest/" + dbInfo.dbService + "/testobject";
-    var ids = getIdArray(indexArray);
+    var ids = getIdArray(indices);
     if (ids.length > 0) {
         switch (method) {
             case "data_record_array":
@@ -148,56 +134,8 @@ function getParams(method, indexArray) {
                     "ids": ids.join(",")
                 };
                 break;
-            case "data_filter":
-                data = {
-                    "filter": ""
-                };
-                $.each(ids, function(index, record) {
-                    if (data.filter != "") {
-                        data.filter += " or ";
-                    }
-                    data.filter += dbInfo.idField + "=" + record;
-                });
-                break;
-            case "data_filter_replace":
-                data = {
-                    "filter": "",
-                    "params": {}
-                };
-                $.each(ids, function(index, record) {
-                    if (data.filter != "") {
-                        data.filter += " or ";
-                    }
-                    data.filter += dbInfo.idField + "=:id" + index;
-                    data.params[":id" + index] = record;
-                });
-                break;
             case "param_idlist_string":
-                params = "&ids=" + ids.join(",");
-                break;
-            case "param_filter":
-                params = "";
-                $.each(ids, function(index, record) {
-                    if (params != "") {
-                        params += " or ";
-                    }
-                    params += dbInfo.idField + "=" + record;
-                });
-                params = "&filter=" + params;
-                break;
-            case "param_filter_replace":
-                data = {
-                    "params": {}
-                };
-                params = "";
-                $.each(ids, function(index, record) {
-                    if (params != "") {
-                        params += " or ";
-                    }
-                    params += dbInfo.idField + "=:id" + index;
-                    data.params[":id" + index] = record;
-                });
-                params = "&filter=" + params;
+                queryParams = "&ids=" + ids.join(",");
                 break;
             case "url_id":
                 url += "/" + ids.join(",");
@@ -208,23 +146,83 @@ function getParams(method, indexArray) {
     }
     var reqType = (data === null ? "GET" :"POST");
     if (reqType !== "GET") {
-        params += "&method=GET";
+        queryParams += "&method=GET";
     }
-    return {"data":data, "params":params, "reqType":reqType, "url":url, "method":method};
+    return {"data":data, "queryParams":queryParams, "reqType":reqType, "url":url, "method":method};
+}
+
+function getParamsByFilter(method, filter) {
+
+    var data = null;
+    var queryParams = "";
+    var url = "/rest/" + dbInfo.dbService + "/testobject";
+    if (filter.cond.length > 0) {
+        switch (method) {
+            case "data_filter":
+                data = {
+                    "filter": ""
+                };
+                $.each(filter.cond, function(index, c) {
+                    if (data.filter != "") {
+                        data.filter += " " + filter.logic + " ";
+                    }
+                    data.filter += c.field + c.op + c.value;
+                });
+                break;
+            case "data_filter_replace":
+                data = {
+                    "filter": "",
+                    "params": {}
+                };
+                $.each(filter.cond, function(index, c) {
+                    if (data.filter != "") {
+                        data.filter += " " + filter.logic + " ";
+                    }
+                    data.filter += c.field + c.op + ":value" + index;
+                    data.params[":value" + index] = c.value;
+                });
+                break;
+            case "param_filter":
+                $.each(filter.cond, function(index, c) {
+                    if (queryParams != "") {
+                        queryParams += " " + filter.logic + " ";
+                    }
+                    queryParams += c.field + c.op + c.value;
+                });
+                queryParams = "&filter=" + encodeURIComponent(queryParams);
+                break;
+            case "param_filter_replace":
+                data = {
+                    "params": {}
+                };
+                $.each(filter.cond, function(index, c) {
+                    if (queryParams != "") {
+                        queryParams +=  " " + filter.logic + " ";
+                    }
+                    queryParams += c.field + c.op + ":value" + index;
+                    data.params[":value" + index] = c.value;
+                });
+                queryParams = "&filter=" + encodeURIComponent(queryParams);
+                break;
+            default:
+                throw "Bad method=" + method;
+        }
+    }
+    var reqType = (data === null ? "GET" :"POST");
+    if (reqType !== "GET") {
+        queryParams += "&method=GET";
+    }
+    return {"data":data, "queryParams":queryParams, "reqType":reqType, "url":url, "method":method};
 }
 
 function getRecords(params) {
 
     var result = {"error":null, "data":null};
     $.ajax({
-        beforeSend: function (request)
-        {
-            request.setRequestHeader("X-DreamFactory-Session-Token", sessionData.session_id);
-            request.setRequestHeader("X-DreamFactory-Application-Name", "testapp");
-        },
+        beforeSend: setHeaders,
         type: params.reqType,
         dataType: 'json',
-        url: hostUrl + params.url + '?' + params.params,
+        url: hostUrl + params.url + '?' + params.queryParams,
         data: params.data ? JSON.stringify(params.data) : null,
         cache: false,
         async: false,
@@ -238,121 +236,128 @@ function getRecords(params) {
     return result;
 }
 
-function updateParams(method, indexArray) {
+function updateParamsByIds(method, newData, indices) {
 
-    var data = null;
-    var params = "";
+    var queryParams = "";
     var url = "/rest/" + dbInfo.dbService + "/testobject";
-    var ids = getIdArray(indexArray);
+    var ids = getIdArray(indices);
     switch (method) {
+        case "data_record_batch":
+            data = newData;
+            break;
         case "data_record_array":
             data = {"record": []};
             $.each(ids, function(index, record) {
-                var newRec = {"updated": true};
-                newRec[dbInfo.idField] = record;
-                data.record.push(newRec);
+                var rec = cloneObject(newData);
+                rec[dbInfo.idField] = record;
+                data.record.push(rec);
             });
             break;
         case "data_record_object":
-            data = {"updated": true};
+            data = newData;
             data[dbInfo.idField] = ids.join(",");
             break;
         case "data_idlist_array":
             data = {
                 "ids": ids,
-                "record": {"updated": true}
+                "record": newData
             };
             break;
         case "data_idlist_string":
             data = {
                 "ids": ids.join(","),
-                "record": {"updated": true}
+                "record": newData
             };
             break;
+        case "param_idlist_string":
+            queryParams = "&ids=" + ids.join(",");
+            data = {
+                "record": newData
+            };
+            break;
+        case "url_id":
+            url += "/" + ids.join(",");
+            data = {
+                "record": newData
+            };
+            break;
+        default:
+            throw "Bad method=" + method;
+    }
+    return {"data":data, "queryParams":queryParams, "url":url, "method":method};
+}
+
+function updateParamsByFilter(method, newData, filter) {
+
+    var queryParams = "";
+    var url = "/rest/" + dbInfo.dbService + "/testobject";
+    switch (method) {
         case "data_filter":
             data = {
                 "filter": "",
-                "record": {"updated": true}
+                "record": newData
             };
-            $.each(ids, function(index, record) {
+            $.each(filter.cond, function(index, c) {
                 if (data.filter != "") {
-                    data.filter += " or ";
+                    data.filter += " " + filter.logic + " ";
                 }
-                data.filter += dbInfo.idField + "=" + record;
+                data.filter += c.field + c.op + c.value;
             });
             break;
         case "data_filter_replace":
             data = {
                 "filter": "",
                 "params": {},
-                "record": {"updated": true}
+                "record": newData
             };
-            $.each(ids, function(index, record) {
+            $.each(filter.cond, function(index, c) {
                 if (data.filter != "") {
-                    data.filter += " or ";
+                    data.filter += " " + filter.logic + " ";
                 }
-                data.filter += dbInfo.idField + "=:id" + index;
-                data.params[":id" + index] = record;
+                data.filter += c.field + c.op + ":value" + index;
+                data.params[":value" + index] = c.value;
             });
-            break;
-        case "param_idlist_string":
-            params = "&ids=" + ids.join(",");
-            data = {
-                "record": {"updated": true}
-            };
             break;
         case "param_filter":
-            params = "";
-            $.each(ids, function(index, record) {
-                if (params != "") {
-                    params += " or ";
+            $.each(filter.cond, function(index, c) {
+                if (queryParams != "") {
+                    queryParams += " " + filter.logic + " ";
                 }
-                params += dbInfo.idField + "=" + record;
+                queryParams += c.field + c.op + c.value;
             });
-            params = "&filter=" + params;
+            queryParams = "&filter=" + encodeURIComponent(queryParams);
             data = {
-                "record": {"updated": true}
+                "record": newData
             };
             break;
         case "param_filter_replace":
             data = {
                 "params": {},
-                "record": {"updated": true}
+                "record": newData
             };
-            params = "";
-            $.each(ids, function(index, record) {
-                if (params != "") {
-                    params += " or ";
+            $.each(filter.cond, function(index, c) {
+                if (queryParams != "") {
+                    queryParams += " " + filter.logic + " ";
                 }
-                params += dbInfo.idField + "=:id" + index;
-                data.params[":id" + index] = record;
+                queryParams += c.field + c.op + ":value" + index;
+                data.params[":value" + index] = c.value;
             });
-            params = "&filter=" + params;
-            break;
-        case "url_id":
-            url += "/" + ids.join(",");
-            data = {
-                "record": {"updated": true}
-            };
+            queryParams = "&filter=" + encodeURIComponent(queryParams);
             break;
         default:
             throw "Bad method=" + method;
     }
-    return {"data":data, "params":params, "url":url, "method":method};
+    return {"data":data, "queryParams":queryParams, "url":url, "method":method};
 }
 
 function updateRecords(params) {
 
     var result = {"error":null, "data":null};
     $.ajax({
-        beforeSend: function (request)
-        {
-            request.setRequestHeader("X-DreamFactory-Session-Token", sessionData.session_id);
-            request.setRequestHeader("X-DreamFactory-Application-Name", "testapp");
-        },
-        type: 'PATCH',
+        beforeSend: setHeaders,
+        type: params.put ? "PUT" : "PATCH",
         dataType: 'json',
-        url: hostUrl + params.url + '?' + params.params,
+        url: hostUrl + params.url + '?' + params.queryParams,
         data: JSON.stringify(params.data),
         cache: false,
         async: false,
@@ -366,12 +371,12 @@ function updateRecords(params) {
     return result;
 }
 
-function deleteParams(method, indexArray) {
+function deleteParamsByIds(method, indices) {
 
     var data = null;
-    var params = "";
+    var queryParams = "";
     var url = "/rest/" + dbInfo.dbService + "/testobject";
-    var ids = getIdArray(indexArray);
+    var ids = getIdArray(indices);
     switch (method) {
         case "data_record_array":
             data = {"record": []};
@@ -391,54 +396,8 @@ function deleteParams(method, indexArray) {
         case "data_idlist_string":
             data = {"ids": ids.join(",")};
             break;
-        case "data_filter":
-            data = {"filter": ""};
-            $.each(ids, function(index, record) {
-                if (data.filter != "") {
-                    data.filter += " or ";
-                }
-                data.filter += dbInfo.idField + "=" + record;
-            });
-            break;
-        case "data_filter_replace":
-            data = {
-                "filter": "",
-                "params": {}
-            };
-            $.each(ids, function(index, record) {
-                if (data.filter != "") {
-                    data.filter += " or ";
-                }
-                data.filter += dbInfo.idField + "=:id" + index;
-                data.params[":id" + index] = record;
-            });
-            break;
         case "param_idlist_string":
-            params = "&ids=" + ids.join(",");
-            break;
-        case "param_filter":
-            params = "";
-            $.each(ids, function(index, record) {
-                if (params != "") {
-                    params += " or ";
-                }
-                params += dbInfo.idField + "=" + record;
-            });
-            params = "&filter=" + params;
-            break;
-        case "param_filter_replace":
-            data = {
-                "params": {}
-            };
-            params = "";
-            $.each(ids, function(index, record) {
-                if (params != "") {
-                    params += " or ";
-                }
-                params += dbInfo.idField + "=:id" + index;
-                data.params[":id" + index] = record;
-            });
-            params = "&filter=" + params;
+            queryParams = "&ids=" + ids.join(",");
             break;
         case "url_id":
             url += "/" + ids.join(",");
@@ -446,21 +405,73 @@ function deleteParams(method, indexArray) {
         default:
             throw "Bad method=" + method;
     }
-    return {"data":data, "params":params, "url":url, "method":method};
+    return {"data":data, "queryParams":queryParams, "url":url, "method":method};
+}
+
+function deleteParamsByFilter(method, filter) {
+
+    var data = null;
+    var queryParams = "";
+    var url = "/rest/" + dbInfo.dbService + "/testobject";
+    switch (method) {
+        case "data_filter":
+            data = {"filter": ""};
+            $.each(filter.cond, function(index, c) {
+                if (data.filter != "") {
+                    data.filter += " " + filter.logic + " ";
+                }
+                data.filter += c.field + c.op + c.value;
+            });
+            break;
+        case "data_filter_replace":
+            data = {
+                "filter": "",
+                "params": {}
+            };
+            $.each(filter.cond, function(index, c) {
+                if (data.filter != "") {
+                    data.filter += " " + filter.logic + " ";
+                }
+                data.filter += c.field + c.op + ":value" + index;
+                data.params[":value" + index] = c.value;
+            });
+            break;
+        case "param_filter":
+            $.each(filter.cond, function(index, c) {
+                if (queryParams != "") {
+                    queryParams += " " + filter.logic + " ";
+                }
+                queryParams += c.field + c.op + c.value;
+            });
+            queryParams = "&filter=" + encodeURIComponent(queryParams);
+            break;
+        case "param_filter_replace":
+            data = {
+                "params": {}
+            };
+            $.each(filter.cond, function(index, c) {
+                if (queryParams != "") {
+                    queryParams += " " + filter.logic + " ";
+                }
+                queryParams += c.field + c.op + ":value" + index;
+                data.params[":value" + index] = c.value;
+            });
+            queryParams = "&filter=" + encodeURIComponent(queryParams);
+            break;
+        default:
+            throw "Bad method=" + method;
+    }
+    return {"data":data, "queryParams":queryParams, "url":url, "method":method};
 }
 
 function deleteRecords(params) {
 
     var result = {"error":null, "data":null};
     $.ajax({
-        beforeSend: function (request)
-        {
-            request.setRequestHeader("X-DreamFactory-Session-Token", sessionData.session_id);
-            request.setRequestHeader("X-DreamFactory-Application-Name", "testapp");
-        },
+        beforeSend: setHeaders,
         type: 'DELETE',
         dataType: 'json',
-        url: hostUrl + params.url + '?' + params.params,
+        url: hostUrl + params.url + '?' + params.queryParams,
         data: JSON.stringify(params.data),
         cache: false,
         async: false,
@@ -478,11 +489,7 @@ function createTable() {
 
     var result = {"error":null, "data":null};
     $.ajax({
-        beforeSend: function (request)
-        {
-            request.setRequestHeader("X-DreamFactory-Session-Token", sessionData.session_id);
-            request.setRequestHeader("X-DreamFactory-Application-Name", "testapp");
-        },
+        beforeSend: setHeaders,
         type: 'POST',
         dataType:'json',
         url: hostUrl + '/rest/' + dbInfo.schemaService,
@@ -503,11 +510,7 @@ function tableExists(name) {
 
     var result = {"error":null, "data":null};
 	$.ajax({
-	    beforeSend: function (request)
-            {
-                request.setRequestHeader("X-DreamFactory-Session-Token", sessionData.session_id);
-                request.setRequestHeader("X-DreamFactory-Application-Name", "testapp");
-            },
+	    beforeSend: setHeaders,
         dataType:'json',
         url: hostUrl + '/rest/' + dbInfo.dbService + "?names=" + name,
         cache:false,
@@ -526,11 +529,7 @@ function deleteTable() {
 
     var result = {"error":null, "data":null};
     $.ajax({
-        beforeSend: function (request)
-        {
-            request.setRequestHeader("X-DreamFactory-Session-Token", sessionData.session_id);
-            request.setRequestHeader("X-DreamFactory-Application-Name", "testapp");
-        },
+        beforeSend: setHeaders,
         type: 'DELETE',
         dataType:'json',
         url: serviceData.record[0].type === 'NoSQL DB' ?
@@ -542,11 +541,58 @@ function deleteTable() {
         success:function (response) {
             result.data = response;
             createdRecords = [];
+            recordCount = 0;
         },
         error:function (response) {
             result.error = getErrorString(response);
         }
     });
+    return result;
+}
+
+function dropLocalTable() {
+
+    $.ajax({
+        beforeSend: setHeaders,
+        type: 'DELETE',
+        dataType:'json',
+        url: hostUrl + '/rest/db/testobject?force=true',
+        data: "",
+        cache:false,
+        async: false,
+        success:function (response) {
+            result.data = response;
+        },
+        error:function (response) {
+            result.error = getErrorString(response);
+        }
+    });
+
+    return result;
+}
+
+// drop table for configured service
+
+function dropTable() {
+
+    $.ajax({
+        beforeSend: setHeaders,
+        type: 'DELETE',
+        dataType:'json',
+        url: hostUrl + '/rest/' + dbInfo.dbService + '/testobject?force=true',
+        data: "",
+        cache:false,
+        async: false,
+        success:function (response) {
+            result.data = response;
+            createdRecords = [];
+            recordCount = 0;
+        },
+        error:function (response) {
+            result.error = getErrorString(response);
+        }
+    });
+
     return result;
 }
 
@@ -660,11 +706,7 @@ function createUsers() {
     }
     var result = {"error":null, "data":null};
     $.ajax({
-        beforeSend: function (request)
-        {
-            request.setRequestHeader("X-DreamFactory-Session-Token", sessionData.session_id);
-            request.setRequestHeader("X-DreamFactory-Application-Name", "testapp");
-        },
+        beforeSend: setHeaders,
         type: 'POST',
         dataType:'json',
         url: hostUrl + '/rest/system/user?fields=email',
@@ -685,11 +727,7 @@ function getUsers() {
 
     var result = {"error":null, "data":null};
 	$.ajax({
-	    beforeSend: function (request)
-            {
-                request.setRequestHeader("X-DreamFactory-Session-Token", sessionData.session_id);
-                request.setRequestHeader("X-DreamFactory-Application-Name", "testapp");
-            },
+	    beforeSend: setHeaders,
         dataType:'json',
         url: hostUrl + '/rest/system/user?filter=email%20like%20%27%25testuser%25%27',
         cache:false,
@@ -708,11 +746,7 @@ function deleteUsers() {
 
     var result = {"error":null, "data":null};
 	$.ajax({
-	    beforeSend: function (request)
-            {
-                request.setRequestHeader("X-DreamFactory-Session-Token", sessionData.session_id);
-                request.setRequestHeader("X-DreamFactory-Application-Name", "testapp");
-            },
+	    beforeSend: setHeaders,
         type: 'DELETE',
 		dataType:'json',
         url: hostUrl + '/rest/system/user',
@@ -729,124 +763,52 @@ function deleteUsers() {
 	return result;
 }
 
-function createRoles(type) {
+function createRoles() {
 
     var data = {"record":[]};
-    if (type === "ownerid") {
-        data.record.push(
-            {
-                "name": "testrole0",
-                "is_active": true,
-                "users": {"record": userData.record[0]},
-                "apps": appData.record,
-                "role_service_accesses": [
-                    {
-                        "access": "Full Access",
-                        "component": "testobject",
-                        "service_id": serviceData.record[0].id,
-                        "filters": [
-                            {
-                                "name": "OwnerId",
-                                "operator": "=",
-                                "value": "user.id"
-                            }
-                        ],
-                        "filter_op": "AND"
-                    }
-                ],
-                "role_system_accesses": [],
-                "lookup_keys":[]
-            }
-        );
-        data.record.push(
-            {
-                "name": "testrole1",
-                "is_active": true,
-                "users": {"record": userData.record[1]},
-                "apps": appData.record,
-                "role_service_accesses": [
-                    {
-                        "access": "Full Access",
-                        "component": "testobject",
-                        "service_id": serviceData.record[0].id,
-                        "filters": [
-                            {
-                                "name": "OwnerId",
-                                "operator": "=",
-                                "value": "user.id"
-                            }
-                        ],
-                        "filter_op": "AND"
-                    }
-                ],
-                "role_system_accesses": [],
-                "lookup_keys":[]
-            }
-        );
-    } else {
-        data.record.push(
-            {
-                "name": "testrole0",
-                "is_active": true,
-                "users": {"record": userData.record[0]},
-                "apps": appData.record,
-                "role_service_accesses": [
-                    {
-                        "access": "Full Access",
-                        "component": "testobject",
-                        "service_id": serviceData.record[0].id,
-                        "filters": [
-                            {
-                                "name": "curr",
-                                "operator": "<",
-                                "value": 100000
-                            }
-                        ],
-                        "filter_op": "AND"
-                    }
-                ],
-                "role_system_accesses": [],
-                "lookup_keys":[]
-            }
-        );
-        data.record.push(
-            {
-                "name": "testrole1",
-                "is_active": true,
-                "users": {"record": userData.record[1]},
-                "apps": appData.record,
-                "role_service_accesses": [
-                    {
-                        "access": "Full Access",
-                        "component": "testobject",
-                        "service_id": serviceData.record[0].id,
-                        "filters": [
-                            {
-                                "name": "curr",
-                                "operator": ">=",
-                                "value": 100000
-                            },
-                            {
-                                "name": "curr",
-                                "operator": "<",
-                                "value": 1000000
-                            }
-                        ],
-                        "filter_op": "AND"
-                    }
-                ],
-                "role_system_accesses": [],
-                "lookup_keys":[]
-            }
-        );
-    }
+
+    data.record.push(
+        {
+            "name": "testrole0",
+            "is_active": true,
+            "users": {"record": userData.record[0]},
+            "apps": appData.record,
+            "role_service_accesses": [
+                {
+                    "access": "Full Access",
+                    "component": "testobject",
+                    "service_id": serviceData.record[0].id,
+                    "filters": [],
+                    "filter_op": "AND"
+                }
+            ],
+            "role_system_accesses": [],
+            "lookup_keys":[]
+        }
+    );
+    data.record.push(
+        {
+            "name": "testrole1",
+            "is_active": true,
+            "users": {"record": userData.record[1]},
+            "apps": appData.record,
+            "role_service_accesses": [
+                {
+                    "access": "Full Access",
+                    "component": "testobject",
+                    "service_id": serviceData.record[0].id,
+                    "filters": [],
+                    "filter_op": "AND"
+                }
+            ],
+            "role_system_accesses": [],
+            "lookup_keys":[]
+        }
+    );
+
     var result = {"error":null, "data":null};
     $.ajax({
-        beforeSend: function (request)
-        {
-            request.setRequestHeader("X-DreamFactory-Session-Token", sessionData.session_id);
-            request.setRequestHeader("X-DreamFactory-Application-Name", "testapp");
-        },
+        beforeSend: setHeaders,
         type: 'POST',
         dataType:'json',
         url: hostUrl + '/rest/system/role?fields=*&related=users,apps,role_service_accesses,role_system_accesses',
@@ -867,11 +829,7 @@ function getRoles() {
 
     var result = {"error":null, "data":null};
 	$.ajax({
-	    beforeSend: function (request)
-            {
-                request.setRequestHeader("X-DreamFactory-Session-Token", sessionData.session_id);
-                request.setRequestHeader("X-DreamFactory-Application-Name", "testapp");
-            },
+	    beforeSend: setHeaders,
         dataType:'json',
         url: hostUrl + '/rest/system/role?filter=name%20like%20%27%25testrole%25%27&fields=*&related=users,apps,role_service_accesses,role_system_accesses',
         cache:false,
@@ -886,15 +844,72 @@ function getRoles() {
 	return result;
 }
 
+function updateRoles(mode) {
+
+    roleData.record[0].role_service_accesses[0].filters = [];
+    roleData.record[1].role_service_accesses[0].filters = [];
+    if (mode === "value") {
+        roleData.record[0].role_service_accesses[0].filters.push(
+            {
+                "name": "curr",
+                "operator": "<",
+                "value": 2000
+            }
+        );
+        roleData.record[1].role_service_accesses[0].filters.push(
+            {
+                "name": "curr",
+                "operator": ">=",
+                "value": 2000
+            },
+            {
+                "name": "curr",
+                "operator": "<",
+                "value": 3000
+            }
+        );
+    }
+    if (mode === "ownerid") {
+        roleData.record[0].role_service_accesses[0].filters.push(
+            {
+                "name": "OwnerId",
+                "operator": "=",
+                "value": "user.id"
+            }
+        );
+        roleData.record[1].role_service_accesses[0].filters.push(
+            {
+                "name": "OwnerId",
+                "operator": "=",
+                "value": "user.id"
+            }
+        );
+    }
+
+    var result = {"error":null, "data":null};
+    $.ajax({
+        beforeSend: setHeaders,
+        type: 'PATCH',
+        dataType:'json',
+        url: hostUrl + '/rest/system/role?fields=*&related=users,apps,role_service_accesses,role_system_accesses',
+        data:JSON.stringify(roleData),
+        cache:false,
+        async: false,
+        success:function (response) {
+            result.data = response;
+        },
+        error:function (response) {
+            result.error = getErrorString(response);
+        }
+    });
+    return result;
+}
+
 function deleteRoles() {
 
     var result = {"error":null, "data":null};
 	$.ajax({
-	    beforeSend: function (request)
-            {
-                request.setRequestHeader("X-DreamFactory-Session-Token", sessionData.session_id);
-                request.setRequestHeader("X-DreamFactory-Application-Name", "testapp");
-            },
+	    beforeSend: setHeaders,
         type: 'DELETE',
 		dataType:'json',
         url: hostUrl + '/rest/system/role',
@@ -915,11 +930,7 @@ function getServices(num) {
 
     var result = {"error":null, "data":null};
     $.ajax({
-        beforeSend: function (request)
-        {
-            request.setRequestHeader("X-DreamFactory-Session-Token", sessionData.session_id);
-            request.setRequestHeader("X-DreamFactory-Application-Name", "testapp");
-        },
+        beforeSend: setHeaders,
         dataType:'json',
         url: hostUrl + '/rest/system/service?filter=api_name%3D%27' + dbInfo.dbService + '%27',
         cache:false,
@@ -932,4 +943,12 @@ function getServices(num) {
         }
     });
     return result;
+}
+
+function setHeaders(request)
+{
+    if (sessionData) {
+        request.setRequestHeader("X-DreamFactory-Session-Token", sessionData.session_id);
+    }
+    request.setRequestHeader("X-DreamFactory-Application-Name", "testapp");
 }

@@ -78,6 +78,29 @@ function getIdArray(indexArray) {
     return result;
 }
 
+function formatId(id) {
+
+    if (dbInfo.idType === "string") {
+        id = "'" + id + "'";
+    }
+    return id;
+}
+
+function idFilter(values) {
+
+    var ids = getIdArray(values);
+    return makeFilter(dbInfo.idField, "=", ids, "or");
+}
+
+function makeFilter(field, op, values, logic) {
+
+    var filter = {"cond": [], "logic": logic};
+    $.each(values, function(index, value) {
+        filter.cond.push({"field": field, "op": op, "value": formatId(value)});
+    });
+    return filter;
+}
+
 function checkResult(cond, desc, result) {
 
     if (!cond) {
@@ -86,4 +109,9 @@ function checkResult(cond, desc, result) {
         throw "Assertion failed";
     }
     console.log("(" + ++testCounter + ") " + desc + " OK ");
+}
+
+function cloneObject(object) {
+
+    return JSON.parse(JSON.stringify(object));
 }
