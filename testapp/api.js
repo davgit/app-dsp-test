@@ -951,4 +951,7 @@ function setHeaders(request)
         request.setRequestHeader("X-DreamFactory-Session-Token", sessionData.session_id);
     }
     request.setRequestHeader("X-DreamFactory-Application-Name", "testapp");
+    if (request.data) {
+        request.setRequestHeader("Content-Type", "application/json");
+    }
 }
