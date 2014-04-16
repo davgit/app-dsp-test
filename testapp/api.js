@@ -13,6 +13,7 @@ function login(params) {
         beforeSend: setHeaders,
         type: 'POST',
 		dataType:'json',
+        contentType:'application/json',
         url: hostUrl + '/rest/user/session',
         data: JSON.stringify(params.data),
         cache:false,
@@ -34,6 +35,7 @@ function logout() {
         beforeSend: setHeaders,
         type: 'DELETE',
 		dataType:'json',
+        contentType:'application/json',
         url: hostUrl + '/rest/user/session',
         cache:false,
         async: false,
@@ -53,6 +55,7 @@ function getApps() {
     $.ajax({
 	    beforeSend: setHeaders,
         dataType:'json',
+        contentType:'application/json',
         url: hostUrl + '/rest/system/app',
         cache:false,
         async: false,
@@ -79,6 +82,7 @@ function createRecords(params) {
         beforeSend: setHeaders,
         type: 'POST',
         dataType:  'json',
+        contentType:'application/json',
         url: hostUrl + "/rest/" + dbInfo.dbService + "/testobject?" + params.queryParams,
         data: JSON.stringify(params.data),
         cache: false,
@@ -122,7 +126,7 @@ function getParamsByIds(method, indices) {
                 break;
             case "data_record_object":
                 data = {};
-                data[dbInfo.idField] = ids.join(",");
+                data[dbInfo.idField] = ids[0];
                 break;
             case "data_idlist_array":
                 data = {
@@ -138,7 +142,7 @@ function getParamsByIds(method, indices) {
                 queryParams = "&ids=" + ids.join(",");
                 break;
             case "url_id":
-                url += "/" + ids.join(",");
+                url += "/" + ids[0];
                 break;
             default:
                 throw "Bad method=" + method;
@@ -222,6 +226,7 @@ function getRecords(params) {
         beforeSend: setHeaders,
         type: params.reqType,
         dataType: 'json',
+        contentType:'application/json',
         url: hostUrl + params.url + '?' + params.queryParams,
         data: params.data ? JSON.stringify(params.data) : null,
         cache: false,
@@ -255,7 +260,7 @@ function updateParamsByIds(method, newData, indices) {
             break;
         case "data_record_object":
             data = newData;
-            data[dbInfo.idField] = ids.join(",");
+            data[dbInfo.idField] = ids[0];
             break;
         case "data_idlist_array":
             data = {
@@ -276,7 +281,7 @@ function updateParamsByIds(method, newData, indices) {
             };
             break;
         case "url_id":
-            url += "/" + ids.join(",");
+            url += "/" + ids[0];
             data = {
                 "record": newData
             };
@@ -357,6 +362,7 @@ function updateRecords(params) {
         beforeSend: setHeaders,
         type: params.put ? "PUT" : "PATCH",
         dataType: 'json',
+        contentType:'application/json',
         url: hostUrl + params.url + '?' + params.queryParams,
         data: JSON.stringify(params.data),
         cache: false,
@@ -388,7 +394,7 @@ function deleteParamsByIds(method, indices) {
             break;
         case "data_record_object":
             data = {};
-            data[dbInfo.idField] = ids.join(",");
+            data[dbInfo.idField] = ids[0];
             break;
         case "data_idlist_array":
             data = {"ids": ids};
@@ -400,7 +406,7 @@ function deleteParamsByIds(method, indices) {
             queryParams = "&ids=" + ids.join(",");
             break;
         case "url_id":
-            url += "/" + ids.join(",");
+            url += "/" + ids[0];
             break;
         default:
             throw "Bad method=" + method;
@@ -471,6 +477,7 @@ function deleteRecords(params) {
         beforeSend: setHeaders,
         type: 'DELETE',
         dataType: 'json',
+        contentType:'application/json',
         url: hostUrl + params.url + '?' + params.queryParams,
         data: JSON.stringify(params.data),
         cache: false,
@@ -492,6 +499,7 @@ function createTable() {
         beforeSend: setHeaders,
         type: 'POST',
         dataType:'json',
+        contentType:'application/json',
         url: hostUrl + '/rest/' + dbInfo.schemaService,
         data: getSchema(),
         cache:false,
@@ -512,6 +520,7 @@ function tableExists(name) {
 	$.ajax({
 	    beforeSend: setHeaders,
         dataType:'json',
+        contentType:'application/json',
         url: hostUrl + '/rest/' + dbInfo.dbService + "?names=" + name,
         cache:false,
         async: false,
@@ -532,6 +541,7 @@ function deleteTable() {
         beforeSend: setHeaders,
         type: 'DELETE',
         dataType:'json',
+        contentType:'application/json',
         url: serviceData.record[0].type === 'NoSQL DB' ?
             hostUrl + '/rest/' + dbInfo.schemaService + '?names=testobject' :
             hostUrl + '/rest/' + dbInfo.schemaService + '/testobject',
@@ -552,10 +562,13 @@ function deleteTable() {
 
 function dropLocalTable() {
 
+    var result = {"error":null, "data":null};
+
     $.ajax({
         beforeSend: setHeaders,
         type: 'DELETE',
         dataType:'json',
+        contentType:'application/json',
         url: hostUrl + '/rest/db/testobject?force=true',
         data: "",
         cache:false,
@@ -575,10 +588,13 @@ function dropLocalTable() {
 
 function dropTable() {
 
+    var result = {"error":null, "data":null};
+
     $.ajax({
         beforeSend: setHeaders,
         type: 'DELETE',
         dataType:'json',
+        contentType:'application/json',
         url: hostUrl + '/rest/' + dbInfo.dbService + '/testobject?force=true',
         data: "",
         cache:false,
@@ -709,6 +725,7 @@ function createUsers() {
         beforeSend: setHeaders,
         type: 'POST',
         dataType:'json',
+        contentType:'application/json',
         url: hostUrl + '/rest/system/user?fields=email',
         data:JSON.stringify(data),
         cache:false,
@@ -729,6 +746,7 @@ function getUsers() {
 	$.ajax({
 	    beforeSend: setHeaders,
         dataType:'json',
+        contentType:'application/json',
         url: hostUrl + '/rest/system/user?filter=email%20like%20%27%25testuser%25%27',
         cache:false,
         async: false,
@@ -749,6 +767,7 @@ function deleteUsers() {
 	    beforeSend: setHeaders,
         type: 'DELETE',
 		dataType:'json',
+        contentType:'application/json',
         url: hostUrl + '/rest/system/user',
         data:JSON.stringify(userData),
         cache:false,
@@ -811,6 +830,7 @@ function createRoles() {
         beforeSend: setHeaders,
         type: 'POST',
         dataType:'json',
+        contentType:'application/json',
         url: hostUrl + '/rest/system/role?fields=*&related=users,apps,role_service_accesses,role_system_accesses',
         data:JSON.stringify(data),
         cache:false,
@@ -831,6 +851,7 @@ function getRoles() {
 	$.ajax({
 	    beforeSend: setHeaders,
         dataType:'json',
+        contentType:'application/json',
         url: hostUrl + '/rest/system/role?filter=name%20like%20%27%25testrole%25%27&fields=*&related=users,apps,role_service_accesses,role_system_accesses',
         cache:false,
         async: false,
@@ -912,6 +933,7 @@ function deleteRoles() {
 	    beforeSend: setHeaders,
         type: 'DELETE',
 		dataType:'json',
+        contentType:'application/json',
         url: hostUrl + '/rest/system/role',
         data:JSON.stringify(roleData),
         cache:false,
@@ -932,6 +954,7 @@ function getServices(num) {
     $.ajax({
         beforeSend: setHeaders,
         dataType:'json',
+        contentType:'application/json',
         url: hostUrl + '/rest/system/service?filter=api_name%3D%27' + dbInfo.dbService + '%27',
         cache:false,
         async: false,
@@ -951,7 +974,4 @@ function setHeaders(request)
         request.setRequestHeader("X-DreamFactory-Session-Token", sessionData.session_id);
     }
     request.setRequestHeader("X-DreamFactory-Application-Name", "testapp");
-    if (request.data) {
-        request.setRequestHeader("Content-Type", "application/json");
-    }
 }

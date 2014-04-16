@@ -78,10 +78,18 @@ function getIdArray(indexArray) {
     return result;
 }
 
-function formatId(id) {
+function formatFilterId(id) {
 
     if (dbInfo.idType === "string") {
         id = "'" + id + "'";
+    }
+    return id;
+}
+
+function formatJsonId(id) {
+
+    if (dbInfo.idType === "string") {
+        return id.toString();
     }
     return id;
 }
@@ -96,7 +104,7 @@ function makeFilter(field, op, values, logic) {
 
     var filter = {"cond": [], "logic": logic};
     $.each(values, function(index, value) {
-        filter.cond.push({"field": field, "op": op, "value": formatId(value)});
+        filter.cond.push({"field": field, "op": op, "value": formatFilterId(value)});
     });
     return filter;
 }

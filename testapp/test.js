@@ -91,7 +91,7 @@ function createOne(offset, amt) {
     record.curr = amt + offset;
     if (dbInfo.generateIds) {
         var id = recordCount;
-        record[dbInfo.idField] = formatId(id);
+        record[dbInfo.idField] = formatJsonId(id);
     }
     return record;
 }
@@ -147,23 +147,27 @@ function simpleCreateTest() {
     checkRecordCount(12);
 
     var data = createOne(0, 3000);
-    delete data.OwnerId;
-    params = createParams("data_record_object", data);
-    result = createRecords(params);
-    checkResult(result.error, "Try to create 1 record with no OwnerId (data_record_object)", result);
-    checkRecordCount(12);
-
-    var data = createOne(0, 3000);
     data.OwnerId = userData.record[0].id;
     params = createParams("data_record_object", data);
     result = createRecords(params);
     checkResult(result.error === null && result.data, "Create 1 record with another user's OwnerId (data_record_object)", result);
     checkRecordCount(13);
+
+    if (serviceData.record[0].type !== "NoSQL DB") {
+        var data = createOne(0, 3000);
+        delete data.OwnerId;
+        params = createParams("data_record_object", data);
+        result = createRecords(params);
+        checkResult(result.error, "Try to create 1 record with no OwnerId (data_record_object)", result);
+        checkRecordCount(13);
+    }
 }
 
 // get records as admin using various methods, role filters do not apply
 
 function simpleGetTest() {
+
+    var result, params;
 
     deleteAllRecords();
     checkRecordCount(0);
@@ -240,6 +244,8 @@ function updateOne() {
 
 function simpleUpdateTest() {
 
+    var result, params;
+
     deleteAllRecords();
     checkRecordCount(0);
 
@@ -302,15 +308,14 @@ function batchByIds(data, ids) {
             result.record.push(match);
         }
     });
-    console.log(result);
     return result;
 }
 
 function oneById(data, id) {
 
     var result = null;
-    data = cloneObject(data);
-    $.each(data.record, function(index, record) {
+    var clone = cloneObject(data);
+    $.each(clone.record, function(index, record) {
         if (record[dbInfo.idField] === id) {
             record.updated = true;
             result = record;
@@ -323,38 +328,37 @@ function oneById(data, id) {
 
 function simplePutTest() {
 
-    var saveData;
+    var result, params, saveData;
 
     deleteAllRecords();
     checkRecordCount(0);
 
     // create records
     params = createParams("data_record_array", createBatch(20));
-    params.verb = verb;
     result = createRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 20, "Create 20 records (data_record_array)", result);
     checkRecordCount(20);
     saveData = result.data;
-
     checkResult(saveData.record[0].updated === undefined && saveData.record[1].updated === undefined, "Verify 'updated' field not present", result);
 
-    params = updateParamsByIds("data_record_batch", batchByIds(saveData, [0,1]), [0,1]);
+    params = updateParamsByIds("data_record_batch", batchByIds(saveData, getIdArray([0,1])), [0,1]);
     params.put = true;
-    params.queryParams += encodeURIComponent("&order=" + dbInfo.idField + " asc");
     result = updateRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "PUT 2 records (data_record_batch)", result);
 
-    params = getParamsByIds("data_record_array", [0,1]);
+    params = getParamsByIds("data_record_array", [0]);
     result = getRecords(params);
-    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Get updated records", result);
-    checkResult(result.data.record[0].updated === true && result.data.record[1].updated === true, "Verify 'updated' field", result);
-    checkResult(result.data.record[0].name === saveData.record[0].name && result.data.record[1].name === saveData.record[1].name, "Verify 'name' field", result);
-    checkResult(result.data.record[0].curr === saveData.record[0].curr && result.data.record[1].curr === saveData.record[1].curr, "Verify 'curr' field", result);
+    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 1, "Get updated record", result);
+    checkResult(result.data.record[0].updated === 1 || result.data.record[0].updated === true, "Verify 'updated' field", result);
+    checkResult(result.data.record[0].name === saveData.record[0].name, "Verify 'name' field", result);
+    checkResult(result.data.record[0].curr === saveData.record[0].curr, "Verify 'curr' field", result);
 }
 
 // delete records as admin using various methods, role filters do not apply
 
 function simpleDeleteTest() {
+
+    var result, params;
 
     deleteAllRecords();
     checkRecordCount(0);
@@ -420,6 +424,8 @@ function simpleDeleteTest() {
 }
 
 function ownerIdTest() {
+
+    var result, params;
 
     console.log("Starting ownerIdTest()");
 
@@ -502,6 +508,8 @@ function ownerIdTest() {
 
 function valueTest() {
 
+    var result, params;
+
     console.log("Starting valueTest()");
 
     adminLogin();
@@ -547,7 +555,7 @@ function valueTest() {
     result = deleteRecords(params);
     checkResult(result.error, "Try to delete admin record as user 1", result);
 
-    params = createParams("data_record_object", createOne(5));
+    params = createParams("data_record_object", createOne(0, 2000));
     result = createRecords(params);
     checkResult(result.error, "Try to create user 2 record as user 1", result);
 
@@ -573,6 +581,8 @@ function valueTest() {
 }
 
 function rollbackTest() {
+
+    var result, params;
 
     console.log("Starting rollbackTest()");
 
@@ -608,6 +618,8 @@ function rollbackTest() {
 
 function adminLogin() {
 
+    var result, params;
+
     params = {"data": {"email":"tester@dreamfactory.com", "password":"slimjim"}};
     result = login(params);
     checkResult(result.error === null, "Admin login", result);
@@ -615,6 +627,8 @@ function adminLogin() {
 }
 
 function user1Login() {
+
+    var result, params;
 
     params = {"data": {"email":"testuser1@dreamfactory.com", "password":"slimjim"}};
     result = login(params);
@@ -624,6 +638,8 @@ function user1Login() {
 
 function user2Login() {
 
+    var result, params;
+
     params = {"data": {"email":"testuser2@dreamfactory.com", "password":"slimjim"}};
     result = login(params);
     checkResult(result.error === null, "User 2 login", result);
@@ -632,12 +648,16 @@ function user2Login() {
 
 function userLogout() {
 
+    var result;
+
     result = logout();
     checkResult(result.error === null, "Logout", result);
     sessionData = null;
 }
 
 function checkRecordCount(num) {
+
+    var result, params;
 
     params = getParamsByIds("data_record_array", []);
     result = getRecords(params);
@@ -646,6 +666,8 @@ function checkRecordCount(num) {
 
 function deleteAllRecords() {
 
-    result = dropTable();
+    var result;
+
+    var result = dropTable();
     checkResult(result.error === null && result.data && result.data.success === true, "Delete all records", result);
 }
