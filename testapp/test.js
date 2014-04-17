@@ -98,8 +98,8 @@ function createOne(offset, amt) {
 
 function createBatch(num, amt) {
 
-    if (!amt) {
-        amt = 3000;
+    if (amt === undefined) {
+        amt = 2000;
     }
     data = {"record":[]};
     for (i = 0; i < num; i++) {
@@ -141,12 +141,12 @@ function simpleCreateTest() {
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 1, "Create 1 record (data_record_array)", result);
     checkRecordCount(11);
 
-    params = createParams("data_record_object", createOne(0, 3000));
+    params = createParams("data_record_object", createOne(0, 2000));
     result = createRecords(params);
     checkResult(result.error === null && result.data, "Create 1 record (data_record_object)", result);
     checkRecordCount(12);
 
-    var data = createOne(0, 3000);
+    var data = createOne(0, 2000);
     data.OwnerId = userData.record[0].id;
     params = createParams("data_record_object", data);
     result = createRecords(params);
@@ -154,7 +154,7 @@ function simpleCreateTest() {
     checkRecordCount(13);
 
     if (serviceData.record[0].type !== "NoSQL DB") {
-        var data = createOne(0, 3000);
+        var data = createOne(0, 2000);
         delete data.OwnerId;
         params = createParams("data_record_object", data);
         result = createRecords(params);
@@ -204,11 +204,11 @@ function simpleGetTest() {
     checkResult(result.error === null && result.data, "Get 1 record (url_id)", result);
 
     // AND filter
-    params = getParamsByFilter("data_filter", {"cond":[{"field": "curr","op": ">=","value": 3000},{"field": "curr","op": "<=","value": 3004}],"logic":"and"});
+    params = getParamsByFilter("data_filter", {"cond":[{"field": "curr","op": ">=","value": 2000},{"field": "curr","op": "<=","value": 2004}],"logic":"and"});
     result = getRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 5, "Get records with AND filter", result);
     $.each(result.data.record, function(index, record) {
-        checkResult(record.curr >= 3000 && record.curr <= 3004, "Verify 3000 <= " + record.curr + " <= 3004", result);
+        checkResult(record.curr >= 2000 && record.curr <= 2004, "Verify 2000 <= " + record.curr + " <= 2004", result);
     });
 
     if (serviceData.record[0].storage_type !== "aws dynamodb") {
@@ -506,29 +506,29 @@ function ownerIdTest() {
     userLogout();
 }
 
-function valueTest() {
+function valueTest(mode) {
 
     var result, params;
 
-    console.log("Starting valueTest()");
+    console.log("Starting valueTest(" + mode + ")");
 
     adminLogin();
     deleteAllRecords();
     checkRecordCount(0);
-    result = updateRoles('value');
-    checkResult(result.error === null, "Set roles to value mode", result);
+    result = updateRoles(mode);
+    checkResult(result.error === null, "Set roles to " + mode + " mode", result);
 
-    params = createParams("data_record_array", createBatch(3, 1000));
+    params = createParams("data_record_array", createBatch(3, 0));
     result = createRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 3, "Create 3 records as admin for user 1", result);
     checkRecordCount(3);
 
-    params = createParams("data_record_array", createBatch(4, 2000));
+    params = createParams("data_record_array", createBatch(4, 1000));
     result = createRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 4, "Create 4 records as admin for user 2", result);
     checkRecordCount(7);
 
-    params = createParams("data_record_array", createBatch(3, 3000));
+    params = createParams("data_record_array", createBatch(3, 2000));
     result = createRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 3, "Create 3 records as admin for admin", result);
     checkRecordCount(10);
@@ -540,10 +540,10 @@ function valueTest() {
     result = getRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 3, "Verify 3 records for user 1", result);
     $.each(result.data.record, function(index, record) {
-        checkResult(record.curr < 2000, "Verify " + record.curr, result);
+        checkResult(record.curr < 1000, "Verify " + record.curr, result);
     });
 
-    params = createParams("data_record_object", createOne(0, 3000));
+    params = createParams("data_record_object", createOne(0, 2000));
     result = createRecords(params);
     checkResult(result.error, "Try to create admin record as user 1", result);
 
@@ -555,7 +555,7 @@ function valueTest() {
     result = deleteRecords(params);
     checkResult(result.error, "Try to delete admin record as user 1", result);
 
-    params = createParams("data_record_object", createOne(0, 2000));
+    params = createParams("data_record_object", createOne(0, 1000));
     result = createRecords(params);
     checkResult(result.error, "Try to create user 2 record as user 1", result);
 
@@ -574,7 +574,7 @@ function valueTest() {
     result = getRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 4, "Verify 4 records for user 2", result);
     $.each(result.data.record, function(index, record) {
-        checkResult(record.curr >= 2000 && record.curr < 3000, "Verify " + record.curr, result);
+        checkResult(record.curr >= 1000 && record.curr < 2000, "Verify " + record.curr, result);
     });
 
     userLogout();
@@ -596,18 +596,18 @@ function rollbackTest() {
     user1Login();
 
     // create 10 records as user 1, index 4 and 7 are bad, all should be rolled back
-    params = createParams("data_record_array", createBatch(10, 1000));
-    params.data.record[4].curr = 3000;
-    params.data.record[7].curr = 3000;
+    params = createParams("data_record_array", createBatch(10, 0));
+    params.data.record[4].curr = 2000;
+    params.data.record[7].curr = 2000;
     params.queryParams += "&rollback=true";
     result = createRecords(params);
     checkResult(result.rawError && result.rawError.error && result.rawError.error[0].context && result.rawError.error[0].context.error && result.rawError.error[0].context.error.join(",") === "4", "Create 10 records with rollback, 2 bad records", result);
     checkRecordCount(0);
 
     // create 10 records as user 1, only index 4 and 7 should fail
-    params = createParams("data_record_array", createBatch(10, 1000));
-    params.data.record[4].curr = 3000;
-    params.data.record[7].curr = 3000;
+    params = createParams("data_record_array", createBatch(10, 0));
+    params.data.record[4].curr = 2000;
+    params.data.record[7].curr = 2000;
     params.queryParams += "&continue=true";
     result = createRecords(params);
     checkResult(result.rawError && result.rawError.error && result.rawError.error[0].context && result.rawError.error[0].context.error && result.rawError.error[0].context.error.join(",") === "4,7", "Create 10 records with continue, 2 bad records", result);

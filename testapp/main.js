@@ -10,7 +10,8 @@ function runApp() {
     initApi();
     crudTest();
     ownerIdTest();
-    valueTest();
+    valueTest("value");
+    valueTest("lookup");
     rollbackTest();
     console.log("All tests passed!");
 }

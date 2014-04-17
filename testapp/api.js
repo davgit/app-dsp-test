@@ -716,7 +716,17 @@ function createUsers() {
                 "confirmed": true,
                 "is_active": true,
                 "is_sys_admin": false,
-                "password": "slimjim"
+                "password": "slimjim",
+                "lookup_keys": [
+                    {
+                     "name": "mincurr",
+                     "value": i * 1000
+                    },
+                    {
+                        "name": "maxcurr",
+                        "value": i * 1000 + 1000
+                    }
+                ]
             }
         );
     }
@@ -726,7 +736,7 @@ function createUsers() {
         type: 'POST',
         dataType:'json',
         contentType:'application/json',
-        url: hostUrl + '/rest/system/user?fields=email',
+        url: hostUrl + '/rest/system/user?fields=*',
         data:JSON.stringify(data),
         cache:false,
         async: false,
@@ -786,44 +796,27 @@ function createRoles() {
 
     var data = {"record":[]};
 
-    data.record.push(
-        {
-            "name": "testrole0",
-            "is_active": true,
-            "users": {"record": userData.record[0]},
-            "apps": appData.record,
-            "role_service_accesses": [
-                {
-                    "access": "Full Access",
-                    "component": "testobject",
-                    "service_id": serviceData.record[0].id,
-                    "filters": [],
-                    "filter_op": "AND"
-                }
-            ],
-            "role_system_accesses": [],
-            "lookup_keys":[]
-        }
-    );
-    data.record.push(
-        {
-            "name": "testrole1",
-            "is_active": true,
-            "users": {"record": userData.record[1]},
-            "apps": appData.record,
-            "role_service_accesses": [
-                {
-                    "access": "Full Access",
-                    "component": "testobject",
-                    "service_id": serviceData.record[0].id,
-                    "filters": [],
-                    "filter_op": "AND"
-                }
-            ],
-            "role_system_accesses": [],
-            "lookup_keys":[]
-        }
-    );
+    for (i = 0; i < 2; i++) {
+        data.record.push(
+            {
+                "name": "testrole" + (i + 1),
+                "is_active": true,
+                "users": {"record": userData.record[i]},
+                "apps": appData.record,
+                "role_service_accesses": [
+                    {
+                        "access": "Full Access",
+                        "component": "testobject",
+                        "service_id": serviceData.record[0].id,
+                        "filters": [],
+                        "filter_op": "AND"
+                    }
+                ],
+                "role_system_accesses": [],
+                "lookup_keys":[]
+            }
+        );
+    }
 
     var result = {"error":null, "data":null};
     $.ajax({
@@ -867,44 +860,49 @@ function getRoles() {
 
 function updateRoles(mode) {
 
-    roleData.record[0].role_service_accesses[0].filters = [];
-    roleData.record[1].role_service_accesses[0].filters = [];
-    if (mode === "value") {
-        roleData.record[0].role_service_accesses[0].filters.push(
-            {
-                "name": "curr",
-                "operator": "<",
-                "value": 2000
-            }
-        );
-        roleData.record[1].role_service_accesses[0].filters.push(
-            {
-                "name": "curr",
-                "operator": ">=",
-                "value": 2000
-            },
-            {
-                "name": "curr",
-                "operator": "<",
-                "value": 3000
-            }
-        );
-    }
-    if (mode === "ownerid") {
-        roleData.record[0].role_service_accesses[0].filters.push(
-            {
-                "name": "OwnerId",
-                "operator": "=",
-                "value": "user.id"
-            }
-        );
-        roleData.record[1].role_service_accesses[0].filters.push(
-            {
-                "name": "OwnerId",
-                "operator": "=",
-                "value": "user.id"
-            }
-        );
+    for (i = 0; i < 2; i++) {
+        switch (mode) {
+            case "value":
+                var data = [
+                    {
+                        "name": "curr",
+                        "operator": ">=",
+                        "value": i * 1000
+                    },
+                    {
+                        "name": "curr",
+                        "operator": "<",
+                        "value": i * 1000 + 1000
+                    }
+                ];
+                break;
+            case "lookup":
+                var data = [
+                    {
+                        "name": "curr",
+                        "operator": ">=",
+                        "value": "{mincurr}"
+                    },
+                    {
+                        "name": "curr",
+                        "operator": "<",
+                        "value": "{maxcurr}"
+                    }
+                ];
+                break;
+            case "ownerid":
+                var data = [
+                    {
+                        "name": "OwnerId",
+                        "operator": "=",
+                        "value": "{user.id}"
+                    }
+                ];
+                break;
+            default:
+                throw "bad mode=" + mode;
+        }
+        roleData.record[i].role_service_accesses[0].filters = data;
     }
 
     var result = {"error":null, "data":null};
