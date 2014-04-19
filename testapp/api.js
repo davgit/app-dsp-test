@@ -152,6 +152,9 @@ function getParamsByIds(method, indices) {
     if (reqType !== "GET") {
         queryParams += "&method=GET";
     }
+    if (dbInfo.idType) {
+        queryParams += "&id_type=" + dbInfo.idType;
+    }
     return {"data":data, "queryParams":queryParams, "reqType":reqType, "url":url, "method":method};
 }
 
@@ -215,6 +218,9 @@ function getParamsByFilter(method, filter) {
     var reqType = (data === null ? "GET" :"POST");
     if (reqType !== "GET") {
         queryParams += "&method=GET";
+    }
+    if (dbInfo.idType) {
+        queryParams += "&id_type=" + dbInfo.idType;
     }
     return {"data":data, "queryParams":queryParams, "reqType":reqType, "url":url, "method":method};
 }
@@ -282,12 +288,13 @@ function updateParamsByIds(method, newData, indices) {
             break;
         case "url_id":
             url += "/" + ids[0];
-            data = {
-                "record": newData
-            };
+            data = newData;
             break;
         default:
             throw "Bad method=" + method;
+    }
+    if (dbInfo.idType) {
+        queryParams += "&id_type=" + dbInfo.idType;
     }
     return {"data":data, "queryParams":queryParams, "url":url, "method":method};
 }
@@ -352,6 +359,9 @@ function updateParamsByFilter(method, newData, filter) {
         default:
             throw "Bad method=" + method;
     }
+    if (dbInfo.idType) {
+        queryParams += "&id_type=" + dbInfo.idType;
+    }
     return {"data":data, "queryParams":queryParams, "url":url, "method":method};
 }
 
@@ -411,6 +421,9 @@ function deleteParamsByIds(method, indices) {
         default:
             throw "Bad method=" + method;
     }
+    if (dbInfo.idType) {
+        queryParams += "&id_type=" + dbInfo.idType;
+    }
     return {"data":data, "queryParams":queryParams, "url":url, "method":method};
 }
 
@@ -466,6 +479,9 @@ function deleteParamsByFilter(method, filter) {
             break;
         default:
             throw "Bad method=" + method;
+    }
+    if (dbInfo.idType) {
+        queryParams += "&id_type=" + dbInfo.idType;
     }
     return {"data":data, "queryParams":queryParams, "url":url, "method":method};
 }
@@ -649,8 +665,8 @@ function getSchema() {
                             "label":      "pick",
                             "type":       "string",
                             "validation": "picklist",
-                            "values":     [
-                                "New", "In Process", "Closed"
+                            "value":     [
+                                "small", "medium", "large"
                             ]
                         },
                         {
@@ -720,11 +736,11 @@ function createUsers() {
                 "lookup_keys": [
                     {
                      "name": "mincurr",
-                     "value": i * 1000
+                     "value": i ? 1000 : 0
                     },
                     {
                         "name": "maxcurr",
-                        "value": i * 1000 + 1000
+                        "value": i ? 2000 : 1000
                     }
                 ]
             }
@@ -862,17 +878,27 @@ function updateRoles(mode) {
 
     for (i = 0; i < 2; i++) {
         switch (mode) {
-            case "value":
+            case "number":
                 var data = [
                     {
                         "name": "curr",
                         "operator": ">=",
-                        "value": i * 1000
+                        "value": i ? 1000 : 0
                     },
                     {
                         "name": "curr",
                         "operator": "<",
-                        "value": i * 1000 + 1000
+                        "value": i ? 2000 : 1000
+                    }
+                ];
+                break;
+            case "string":
+            case "picklist":
+                var data = [
+                    {
+                        "name": "str",
+                        "operator": "=",
+                        "value": i ? "medium" : "small"
                     }
                 ];
                 break;

@@ -83,12 +83,24 @@ function initTest() {
 
 function createOne(offset, amt) {
 
+    var size;
+
     recordCount++;
     var record = {
         "name": "test record #" + recordCount + ", userid=" + sessionData.id,
         "OwnerId": sessionData.id
     };
     record.curr = amt + offset;
+
+    if (amt < 1000) {
+        size="small";
+    } else if (amt < 2000) {
+        size="medium";
+    } else {
+        size="large";
+    }
+    record.pick = size;
+    record.str = size;
     if (dbInfo.generateIds) {
         var id = recordCount;
         record[dbInfo.idField] = formatJsonId(id);
@@ -589,7 +601,7 @@ function rollbackTest() {
     adminLogin();
     deleteAllRecords();
     checkRecordCount(0);
-    result = updateRoles('value');
+    result = updateRoles('number');
     checkResult(result.error === null, "Set roles to value mode", result);
 
     userLogout();
