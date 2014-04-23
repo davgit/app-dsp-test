@@ -8,7 +8,7 @@ function initApi() {
 
 function login(params) {
 
-    var result = {"error":null, "data":null};
+    var result = {"rawError":null, "error":null, "data":null};
 	$.ajax({
         beforeSend: setHeaders,
         type: 'POST',
@@ -22,7 +22,8 @@ function login(params) {
 			result.data = response;
         },
         error:function (response) {
-			result.error = getErrorString(response);
+            result.rawError = getErrorObject(response);
+            result.error = getErrorString(response);
         }
     });
 	return result;
@@ -30,7 +31,7 @@ function login(params) {
 
 function logout() {
 
-    var result = {"error":null, "data":null};
+    var result = {"rawError":null, "error":null, "data":null};
 	$.ajax({
         beforeSend: setHeaders,
         type: 'DELETE',
@@ -43,7 +44,8 @@ function logout() {
             result.data = response;
         },
         error:function (response) {
-		   result.error = getErrorString(response);
+            result.rawError = getErrorObject(response);
+            result.error = getErrorString(response);
         }
     });
     return result;
@@ -51,7 +53,7 @@ function logout() {
 
 function getApps() {
 
-    var result = {"error":null, "data":null};
+    var result = {"rawError":null, "error":null, "data":null};
     $.ajax({
 	    beforeSend: setHeaders,
         dataType:'json',
@@ -63,7 +65,8 @@ function getApps() {
 		    result.data = response;
         },
         error:function (response) {
-		   result.error = getErrorString(response);
+            result.rawError = getErrorObject(response);
+            result.error = getErrorString(response);
         }
     });
 	return result;
@@ -77,7 +80,7 @@ function createParams(method, data) {
 
 function createRecords(params) {
 
-    var result = {"error":null, "rawError": null, "data":null};
+    var result = {"rawError": null, "error":null, "data":null};
     $.ajax({
         beforeSend: setHeaders,
         type: 'POST',
@@ -227,7 +230,7 @@ function getParamsByFilter(method, filter) {
 
 function getRecords(params) {
 
-    var result = {"error":null, "data":null};
+    var result = {"rawError":null, "error":null, "data":null};
     $.ajax({
         beforeSend: setHeaders,
         type: params.reqType,
@@ -241,6 +244,7 @@ function getRecords(params) {
             result.data = response;
         },
         error: function (response) {
+            result.rawError = getErrorObject(response);
             result.error = getErrorString(response);
         }
     });
@@ -367,7 +371,7 @@ function updateParamsByFilter(method, newData, filter) {
 
 function updateRecords(params) {
 
-    var result = {"error":null, "data":null};
+    var result = {"rawError":null, "error":null, "data":null};
     $.ajax({
         beforeSend: setHeaders,
         type: params.put ? "PUT" : "PATCH",
@@ -381,6 +385,7 @@ function updateRecords(params) {
             result.data = response;
         },
         error: function (response) {
+            result.rawError = getErrorObject(response);
             result.error = getErrorString(response);
         }
     });
@@ -488,7 +493,7 @@ function deleteParamsByFilter(method, filter) {
 
 function deleteRecords(params) {
 
-    var result = {"error":null, "data":null};
+    var result = {"rawError":null, "error":null, "data":null};
     $.ajax({
         beforeSend: setHeaders,
         type: 'DELETE',
@@ -502,6 +507,7 @@ function deleteRecords(params) {
             result.data = response;
         },
         error: function (response) {
+            result.rawError = getErrorObject(response);
             result.error = getErrorString(response);
         }
     });
@@ -510,7 +516,7 @@ function deleteRecords(params) {
 
 function createTable() {
 
-    var result = {"error":null, "data":null};
+    var result = {"rawError":null, "error":null, "data":null};
     $.ajax({
         beforeSend: setHeaders,
         type: 'POST',
@@ -524,6 +530,7 @@ function createTable() {
             result.data = response;
         },
         error:function (response) {
+            result.rawError = getErrorObject(response);
             result.error = getErrorString(response);
         }
     });
@@ -532,7 +539,7 @@ function createTable() {
 
 function tableExists(name) {
 
-    var result = {"error":null, "data":null};
+    var result = {"rawError":null, "error":null, "data":null};
 	$.ajax({
 	    beforeSend: setHeaders,
         dataType:'json',
@@ -544,7 +551,8 @@ function tableExists(name) {
 			result.data = response;
         },
         error:function (response) {
-		   result.error = getErrorString(response);
+            result.rawError = getErrorObject(response);
+            result.error = getErrorString(response);
         }
     });
 	return result.data !== null;
@@ -552,7 +560,7 @@ function tableExists(name) {
 
 function deleteTable() {
 
-    var result = {"error":null, "data":null};
+    var result = {"rawError":null, "error":null, "data":null};
     $.ajax({
         beforeSend: setHeaders,
         type: 'DELETE',
@@ -570,6 +578,7 @@ function deleteTable() {
             recordCount = 0;
         },
         error:function (response) {
+            result.rawError = getErrorObject(response);
             result.error = getErrorString(response);
         }
     });
@@ -578,7 +587,7 @@ function deleteTable() {
 
 function dropLocalTable() {
 
-    var result = {"error":null, "data":null};
+    var result = {"rawError":null, "error":null, "data":null};
 
     $.ajax({
         beforeSend: setHeaders,
@@ -593,6 +602,7 @@ function dropLocalTable() {
             result.data = response;
         },
         error:function (response) {
+            result.rawError = getErrorObject(response);
             result.error = getErrorString(response);
         }
     });
@@ -604,7 +614,7 @@ function dropLocalTable() {
 
 function dropTable() {
 
-    var result = {"error":null, "data":null};
+    var result = {"rawError":null, "error":null, "data":null};
 
     $.ajax({
         beforeSend: setHeaders,
@@ -621,6 +631,7 @@ function dropTable() {
             recordCount = 0;
         },
         error:function (response) {
+            result.rawError = getErrorObject(response);
             result.error = getErrorString(response);
         }
     });
@@ -746,7 +757,7 @@ function createUsers() {
             }
         );
     }
-    var result = {"error":null, "data":null};
+    var result = {"rawError":null, "error":null, "data":null};
     $.ajax({
         beforeSend: setHeaders,
         type: 'POST',
@@ -760,6 +771,7 @@ function createUsers() {
             result.data = response;
         },
         error:function (response) {
+            result.rawError = getErrorObject(response);
             result.error = getErrorString(response);
         }
     });
@@ -768,7 +780,7 @@ function createUsers() {
 
 function getUsers() {
 
-    var result = {"error":null, "data":null};
+    var result = {"rawError":null, "error":null, "data":null};
 	$.ajax({
 	    beforeSend: setHeaders,
         dataType:'json',
@@ -780,7 +792,8 @@ function getUsers() {
 			result.data = response;
         },
         error:function (response) {
-		   result.error = getErrorString(response);
+            result.rawError = getErrorObject(response);
+            result.error = getErrorString(response);
         }
     });
 	return result;
@@ -788,7 +801,7 @@ function getUsers() {
 
 function deleteUsers() {
 
-    var result = {"error":null, "data":null};
+    var result = {"rawError":null, "error":null, "data":null};
 	$.ajax({
 	    beforeSend: setHeaders,
         type: 'DELETE',
@@ -802,7 +815,8 @@ function deleteUsers() {
             result.data = response;
         },
         error:function (response) {
-		   result.error = getErrorString(response);
+            result.rawError = getErrorObject(response);
+            result.error = getErrorString(response);
         }
     });
 	return result;
@@ -834,7 +848,7 @@ function createRoles() {
         );
     }
 
-    var result = {"error":null, "data":null};
+    var result = {"rawError":null, "error":null, "data":null};
     $.ajax({
         beforeSend: setHeaders,
         type: 'POST',
@@ -848,6 +862,7 @@ function createRoles() {
             result.data = response;
         },
         error:function (response) {
+            result.rawError = getErrorObject(response);
             result.error = getErrorString(response);
         }
     });
@@ -856,7 +871,7 @@ function createRoles() {
 
 function getRoles() {
 
-    var result = {"error":null, "data":null};
+    var result = {"rawError":null, "error":null, "data":null};
 	$.ajax({
 	    beforeSend: setHeaders,
         dataType:'json',
@@ -868,7 +883,8 @@ function getRoles() {
 			result.data = response;
         },
         error:function (response) {
-		   result.error = getErrorString(response);
+            result.rawError = getErrorObject(response);
+            result.error = getErrorString(response);
         }
     });
 	return result;
@@ -931,7 +947,7 @@ function updateRoles(mode) {
         roleData.record[i].role_service_accesses[0].filters = data;
     }
 
-    var result = {"error":null, "data":null};
+    var result = {"rawError":null, "error":null, "data":null};
     $.ajax({
         beforeSend: setHeaders,
         type: 'PATCH',
@@ -944,6 +960,7 @@ function updateRoles(mode) {
             result.data = response;
         },
         error:function (response) {
+            result.rawError = getErrorObject(response);
             result.error = getErrorString(response);
         }
     });
@@ -952,7 +969,7 @@ function updateRoles(mode) {
 
 function deleteRoles() {
 
-    var result = {"error":null, "data":null};
+    var result = {"rawError":null, "error":null, "data":null};
 	$.ajax({
 	    beforeSend: setHeaders,
         type: 'DELETE',
@@ -966,7 +983,8 @@ function deleteRoles() {
             result.data = response;
         },
         error:function (response) {
-		   result.error = getErrorString(response);
+            result.rawError = getErrorObject(response);
+            result.error = getErrorString(response);
         }
     });
 	return result;
@@ -974,7 +992,7 @@ function deleteRoles() {
 
 function getServices(num) {
 
-    var result = {"error":null, "data":null};
+    var result = {"rawError":null, "error":null, "data":null};
     $.ajax({
         beforeSend: setHeaders,
         dataType:'json',
@@ -986,6 +1004,7 @@ function getServices(num) {
             result.data = response;
         },
         error:function (response) {
+            result.rawError = getErrorObject(response);
             result.error = getErrorString(response);
         }
     });

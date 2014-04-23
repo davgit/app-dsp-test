@@ -478,6 +478,30 @@ function ownerIdTest() {
     result = updateRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 5, "Update 5 records as user 2", result);
 
+    params = getParamsByIds("param_idlist_string", [0]);
+    result = getRecords(params);
+    checkResult(result.error !== null, "Try to get 1 admin record as user 2", result);
+
+    params = getParamsByIds("param_idlist_string", [10]);
+    result = getRecords(params);
+    checkResult(result.error !== null, "Try to get 1 user 1 record as user 2", result);
+
+    params = getParamsByIds("param_idlist_string", [15,10,17,11,19]);
+    result = getRecords(params);
+    checkResult(result.rawError && result.rawError.error && result.rawError.error[0].context && result.rawError.error[0].context.error && result.rawError.error[0].context.error.join(",") === "1,3", "Try to get 5 user 2 records as user 2 with two user 1 record ids", result);
+
+    params = updateParamsByIds("data_record_array", updateOne(), [0]);
+    result = updateRecords(params);
+    checkResult(result.error !== null, "Try to update 1 admin record as user 2", result);
+
+    params = updateParamsByIds("data_record_array", updateOne(), [10]);
+    result = updateRecords(params);
+    checkResult(result.error !== null, "Try to update 1 user 1 record as user 2", result);
+
+    params = updateParamsByIds("param_idlist_string", updateOne(), [15,10,17,11,19]);
+    result = updateRecords(params);
+    checkResult(result.rawError && result.rawError.error && result.rawError.error[0].context && result.rawError.error[0].context.error && result.rawError.error[0].context.error.join(",") === "1,3", "Try to update 5 user 2 records as user 2 with two user 1 record ids", result);
+
     userLogout();
     user1Login();
 
