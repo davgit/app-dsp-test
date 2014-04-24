@@ -447,6 +447,8 @@ function ownerIdTest() {
     result = updateRoles('ownerid');
     checkResult(result.error === null, "Set roles to OwnerId mode", result);
 
+    // CREATE
+
     params = createParams("data_record_array", createBatch(10));
     result = createRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 10, "Create 10 records as admin", result);
@@ -461,10 +463,6 @@ function ownerIdTest() {
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 5, "Create 5 records as user 1", result);
     checkRecordCount(5);
 
-    params = updateParamsByIds("data_record_array", updateOne(), [10,11,12,13,14]);
-    result = updateRecords(params);
-    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 5, "Update 5 records as user 1", result);
-
     userLogout();
     user2Login();
 
@@ -474,9 +472,10 @@ function ownerIdTest() {
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 5, "Create 5 records as user 2", result);
     checkRecordCount(5);
 
-    params = updateParamsByIds("data_record_array", updateOne(), [15,16,17,18,19]);
-    result = updateRecords(params);
-    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 5, "Update 5 records as user 2", result);
+    userLogout();
+    user2Login();
+
+    // GET
 
     params = getParamsByIds("param_idlist_string", [0]);
     result = getRecords(params);
@@ -487,8 +486,37 @@ function ownerIdTest() {
     checkResult(result.error !== null, "Try to get 1 user 1 record as user 2", result);
 
     params = getParamsByIds("param_idlist_string", [15,10,17,11,19]);
+    params.queryParams += "&continue=true";
     result = getRecords(params);
-    checkResult(result.rawError && result.rawError.error && result.rawError.error[0].context && result.rawError.error[0].context.error && result.rawError.error[0].context.error.join(",") === "1,3", "Try to get 5 user 2 records as user 2 with two user 1 record ids", result);
+    checkResult(result.rawError && result.rawError.error && result.rawError.error[0].context &&
+        result.rawError.error[0].context.error && result.rawError.error[0].context.error.join(",") === "1,3" &&
+        result.rawError.error[0].context.record && result.rawError.error[0].context.record[0][dbInfo.idField] === createdRecords[15][dbInfo.idField] &&
+        result.rawError.error[0].context.record && result.rawError.error[0].context.record[2][dbInfo.idField] === createdRecords[17][dbInfo.idField] &&
+        result.rawError.error[0].context.record && result.rawError.error[0].context.record[4][dbInfo.idField] === createdRecords[19][dbInfo.idField],
+        "Try to get 5 user 2 records as user 2 with two user 1 record ids (continue=true)", result);
+
+    params = getParamsByIds("param_idlist_string", [15,10,17,11,19]);
+    result = getRecords(params);
+    checkResult(result.rawError && result.rawError.error && result.rawError.error[0].context &&
+        result.rawError.error[0].context.error && result.rawError.error[0].context.error.join(",") === "1" &&
+        result.rawError.error[0].context.record && result.rawError.error[0].context.record[0][dbInfo.idField] === createdRecords[15][dbInfo.idField],
+        "Try to get 5 user 2 records as user 2 with two user 1 record ids (continue=false)", result);
+
+    userLogout();
+    user1Login();
+
+    // UPDATE
+
+    params = updateParamsByIds("data_record_array", updateOne(), [10,11,12,13,14]);
+    result = updateRecords(params);
+    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 5, "Update 5 records as user 1", result);
+
+    userLogout();
+    user2Login();
+
+    params = updateParamsByIds("data_record_array", updateOne(), [15,16,17,18,19]);
+    result = updateRecords(params);
+    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 5, "Update 5 records as user 2", result);
 
     params = updateParamsByIds("data_record_array", updateOne(), [0]);
     result = updateRecords(params);
@@ -498,26 +526,52 @@ function ownerIdTest() {
     result = updateRecords(params);
     checkResult(result.error !== null, "Try to update 1 user 1 record as user 2", result);
 
-    params = updateParamsByIds("param_idlist_string", updateOne(), [15,10,17,11,19]);
+    params = updateParamsByIds("data_record_array", updateOne(), [15,10,17,11,19]);
+    params.queryParams += "&continue=true";
     result = updateRecords(params);
-    checkResult(result.rawError && result.rawError.error && result.rawError.error[0].context && result.rawError.error[0].context.error && result.rawError.error[0].context.error.join(",") === "1,3", "Try to update 5 user 2 records as user 2 with two user 1 record ids", result);
+    checkResult(result.rawError && result.rawError.error && result.rawError.error[0].context &&
+        result.rawError.error[0].context.error && result.rawError.error[0].context.error.join(",") === "1,3" &&
+        result.rawError.error[0].context.record && result.rawError.error[0].context.record[0][dbInfo.idField] == createdRecords[15][dbInfo.idField] &&
+        result.rawError.error[0].context.record && result.rawError.error[0].context.record[2][dbInfo.idField] == createdRecords[17][dbInfo.idField] &&
+        result.rawError.error[0].context.record && result.rawError.error[0].context.record[4][dbInfo.idField] == createdRecords[19][dbInfo.idField], // === fails due to id being string
+        "Try to update 5 user 2 records as user 2 with two user 1 record ids (continue=true)", result);
+
+    params = updateParamsByIds("data_record_array", updateOne(), [15,10,17,11,19]);
+    result = updateRecords(params);
+    checkResult(result.rawError && result.rawError.error && result.rawError.error[0].context &&
+        result.rawError.error[0].context.error && result.rawError.error[0].context.error.join(",") === "1" &&
+        result.rawError.error[0].context.record && result.rawError.error[0].context.record[0][dbInfo.idField] == createdRecords[15][dbInfo.idField], // === fails due to id being string
+        "Try to update 5 user 2 records as user 2 with two user 1 record ids (continue=false)", result);
 
     userLogout();
     user1Login();
+
+    // DELETE
 
     params = deleteParamsByIds("data_record_array", [0,1,2,3,4,5,6,7,8,9]);
     result = deleteRecords(params);
     checkResult(result.error !== null, "Try to delete admin records as user 1", result);
 
     params = deleteParamsByIds("data_record_array", [15,16,17,18,19]);
+    params.queryParams += "&continue=true";
     result = deleteRecords(params);
-    checkResult(result.error !== null, "Try to delete user 2 records as user 1", result);
+    checkResult(result.error !== null, "Try to delete user 2 records as user 1 (continue=true)", result);
 
-    // delete records as user 1
-    checkRecordCount(5);
-    params = deleteParamsByIds("data_record_array", [10,11,12,13,14]);
+    params = deleteParamsByIds("data_record_array", [15,16,17,18,19]);
     result = deleteRecords(params);
-    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 5, "Delete 5 records as user 1", result);
+    checkResult(result.error !== null, "Try to delete user 2 records as user 1 (continue=false)", result);
+
+    // delete records as user 1, throw in some user 2 records
+    checkRecordCount(5);
+    params = deleteParamsByIds("data_record_array", [10,15,12,18,14]);
+    params.queryParams += "&continue=true";
+    result = deleteRecords(params);
+    checkResult(result.error !== null, "Try to delete 3 user 1 records and 2 user 2 records as user 1 (continue=true)", result);
+    checkRecordCount(2);
+
+    params = deleteParamsByIds("data_record_array", [11,13]);
+    result = deleteRecords(params);
+    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Delete 2 records as user 1", result);
     checkRecordCount(0);
 
     userLogout();
