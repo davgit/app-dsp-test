@@ -407,10 +407,6 @@ function deleteParamsByIds(method, indices) {
                 data.record.push(newRec);
             });
             break;
-        case "data_record_object":
-            data = {};
-            data[dbInfo.idField] = ids[0];
-            break;
         case "data_idlist_array":
             data = {"ids": ids};
             break;

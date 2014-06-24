@@ -387,7 +387,7 @@ function simpleDeleteTest() {
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Delete 2 records", result);
     checkRecordCount(18);
 
-    params = deleteParamsByIds("data_record_object", [2]);
+    params = deleteParamsByIds("data_record_array", [2]);
     result = deleteRecords(params);
     checkResult(result.error === null && result.data, "Delete 1 record", result);
     checkRecordCount(17);
@@ -641,7 +641,7 @@ function valueTest(mode) {
     result = updateRecords(params);
     checkResult(result.error, "Try to update admin record as user 1", result);
 
-    params = deleteParamsByIds("data_record_object", [9]);
+    params = deleteParamsByIds("data_record_array", [9]);
     result = deleteRecords(params);
     checkResult(result.error, "Try to delete admin record as user 1", result);
 
@@ -653,7 +653,7 @@ function valueTest(mode) {
     result = updateRecords(params);
     checkResult(result.error, "Try to update user 2 record as user 1", result);
 
-    params = deleteParamsByIds("data_record_object", [5]);
+    params = deleteParamsByIds("data_record_array", [5]);
     result = deleteRecords(params);
     checkResult(result.error, "Try to delete user 2 record as user 1", result);
 
