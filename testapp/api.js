@@ -831,7 +831,7 @@ function createRoles() {
                 "apps": appData.record,
                 "role_service_accesses": [
                     {
-                        "access": "Full Access",
+                        "verbs": ["GET","POST","PUT","PATCH","MERGE","DELETE"],
                         "component": "testobject",
                         "service_id": serviceData.record[0].id,
                         "filters": [],
