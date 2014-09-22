@@ -35,7 +35,7 @@ function getErrorString(response) {
                 // get top level error
                 value += "code " + err.code;
                 value += ": ";
-                value += err.message;
+                value += xml2text(err.message);
                 var context = err.context;
                 if (context && context.error) {
                     // get error string for each errored index

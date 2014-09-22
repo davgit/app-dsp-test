@@ -1,8 +1,11 @@
 var hostUrl = "http://localhost";
-var dbInfo = {"idField":"id", "dbService":"db", "schemaService":"schema"};
-// var dbInfo = {"idField":"_id", "dbService":"mongo", "schemaService":"mongo"};
-// var dbInfo = {"idField":"_id", "dbService":"mongo", "schemaService":"mongo", "generateIds": true, "idType": "string"};
-// var dbInfo = {"idField":"_id", "dbService":"mongo", "schemaService":"mongo", "generateIds": true, "idType": "int"};
-// var dbInfo = {"idField":"id", "dbService":"dynamodb", "schemaService":"dynamodb", "generateIds": true, "idType": "string"};
-// var dbInfo = {"idField":"id", "dbService":"simpledb", "schemaService":"simpledb", "generateIds": true, "idType": "string"};
-// var dbInfo = {"idField":"RowKey", "dbService":"azuretables", "schemaService":"azuretables", "generateIds": true, "idType": "string"};
+
+var dbList = [
+    {"dbService":"db", "idField":"id"},
+    {"dbService":"mongo", "idField":"_id"},
+    //{"dbService":"mongo", "idField":"_id", "idType": "string", "generateIds": true},
+    //{"dbService":"mongo", "idField":"_id", "idType": "int", "generateIds": true},
+    //{"dbService":"dynamodb", "idField":"id", "idType": "string", "generateIds": true},
+    //{"dbService":"simpledb", "idField":"id", "idType": "string", "generateIds": true},
+    //{"dbService":"azuretables", "idField":"RowKey", "idType": "string", "generateIds": true}
+];
