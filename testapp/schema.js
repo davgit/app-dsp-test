@@ -160,15 +160,15 @@ var testSchema = {
                     }
                 },
                 {
-                    "name": "float",
+                    "name": "test_float",
                     "type": "float"
                 },
                 {
-                    "name": "double",
+                    "name": "test_double",
                     "type": "double"
                 },
                 {
-                    "name":      "decimal",
+                    "name":      "test_decimal",
                     "type":      "decimal",
                     "precision": 10,
                     "scale":     2
@@ -238,10 +238,10 @@ var testSchema = {
                 {
                     "name":          "contact_id",
                     "type":          "reference",
+                    "allow_null":    false,
                     "ref_table":     "contact",
                     "ref_fields":    "id",
-                    "ref_on_delete": "CASCADE",
-                    "allow_null":    true
+                    "ref_on_delete": "CASCADE"
                 },
                 {
                     "name":       "info_type",
@@ -387,6 +387,7 @@ var testSchema = {
                 {
                     "name":          "contact_id",
                     "type":          "reference",
+                    "allow_null": false,
                     "ref_table":     "contact",
                     "ref_fields":    "id",
                     "ref_on_delete": "CASCADE"
@@ -394,6 +395,7 @@ var testSchema = {
                 {
                     "name":          "contact_group_id",
                     "type":          "reference",
+                    "allow_null": false,
                     "ref_table":     "contact_group",
                     "ref_fields":    "id",
                     "ref_on_delete": "CASCADE"
@@ -411,6 +413,7 @@ var testSchema = {
                 {
                     "name":          "contact_id",
                     "type":          "reference",
+                    "allow_null": false,
                     "ref_table":     "contact",
                     "ref_fields":    "id",
                     "ref_on_delete": "CASCADE"
@@ -418,6 +421,7 @@ var testSchema = {
                 {
                     "name":       "associated_id",
                     "type":       "reference",
+                    "allow_null": false,
                     "ref_table":  "contact",
                     "ref_fields": "id"
                 },
