@@ -768,5 +768,5 @@ function deleteAllRecords(name) {
     var result;
 
     result = truncateTable(name);
-    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 0, "Delete all " + name + " records", result);
+    checkResult(result.error === null, "Delete all " + name + " records", result);
 }

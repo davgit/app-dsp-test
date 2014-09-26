@@ -303,12 +303,12 @@ function relatedDeleteTest() {
     checkRecordCount("contact_group", 1);
     checkRecordCount("contact_group_relationship", 8);
 
-    // delete contact 3, should delete 2/45 contact_infos and 1/8 linkers
+    // delete contact 3, should delete 1/35 contact_infos and 1/8 linkers
     params = deleteParamsByIds("contact", "data_record_array", [2]);
     result = deleteRecords(params);
     checkResult(result.error === null && result.data, "Delete contact 3", result);
     checkRecordCount("contact", 9);
-    checkRecordCount("contact_info", 43);
+    checkRecordCount("contact_info", 35);
     checkRecordCount("contact_group_relationship", 7);
 
     // delete all contacts, should delete all contact_infos and linkers
