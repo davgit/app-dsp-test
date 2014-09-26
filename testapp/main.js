@@ -12,8 +12,11 @@ $(document).ready(function() {
 function runApp() {
 
     console.log(getStartMsg(dbInfo));
-    initTest();
     initApi();
+    initTest();
+    if (serviceData.record[0].type !== "NoSQL DB") {
+        relatedTest();
+    }
     crudTest();
     ownerIdTest();
     valueTest("number");

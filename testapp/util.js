@@ -68,11 +68,11 @@ function crudError(response) {
     alert(getErrorString(response));
 }
 
-function getIdArray(indexArray) {
+function getIdArray(name, indexArray) {
 
     var result = [];
     $.each(indexArray, function(index, value) {
-        id = createdRecords[value][dbInfo.idField];
+        id = createdRecords[name][value][dbInfo.idField];
         result.push(id);
     });
     return result;
@@ -94,9 +94,9 @@ function formatJsonId(id) {
     return id;
 }
 
-function idFilter(values) {
+function idFilter(name, values) {
 
-    var ids = getIdArray(values);
+    var ids = getIdArray(name, values);
     return makeFilter(dbInfo.idField, "=", ids, "or");
 }
 
@@ -113,7 +113,9 @@ function checkResult(cond, desc, result) {
 
     if (!cond) {
         console.log("(" + ++testCounter + ") " + desc + " FAILED ");
-        console.log(result);
+        if (result) {
+            console.log(result);
+        }
         throw "Assertion failed";
     }
     console.log("(" + ++testCounter + ") " + desc + " OK ");

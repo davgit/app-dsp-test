@@ -14,7 +14,12 @@ function initTest() {
 
     adminLogin();
 
-    dropLocalTable();
+    // avoid this scenario:
+    // local db test leaves records
+    // mongo test tries to delete users but can't because that user created the leftover records
+    $.each(tableList, function( index, name ) {
+        truncateLocalTable(name);
+    });
 
     // get apps
     result = getApps();
@@ -26,13 +31,15 @@ function initTest() {
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 1, "Get db service", result);
     serviceData = result.data;
 
-    // delete table
-    if (tableExists("testobject")) {
-        result = deleteTable();
-        checkResult(result.error === null, "Delete db table", result);
-    }
-    result = tableExists("testobject");
-    checkResult(result === false, "Verify db table deleted", "Table not deleted");
+    // delete tables
+    $.each(tableList, function( index, name ) {
+        if (tableExists(name)) {
+            result = deleteTable(name);
+            checkResult(result.error === null, "Delete db table " + name, result);
+        }
+        result = tableExists(name);
+        checkResult(result === false, "Verify db table " + name + " deleted", "Table " + name + " not deleted");
+    });
 
     // delete roles
     result = getRoles();
@@ -58,11 +65,13 @@ function initTest() {
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 0, "Verify users deleted", result);
     userData = result.data;
 
-	// create table
-    result = createTable();
-    checkResult(result.error === null, "Create table", result);
-    result = tableExists("testobject");
-    checkResult(result === true, "Verify db table created", "Table not created");
+	// create tables
+    result = createTables();
+    checkResult(result.error === null, "Create tables", result);
+    $.each(tableList, function( index, name ) {
+        result = tableExists(name);
+        checkResult(result === true, "Verify db table " + name + " created", "Table " + name + " not created");
+    });
 
 	// create users
     result = createUsers();
@@ -85,9 +94,9 @@ function createOne(offset, amt) {
 
     var size;
 
-    recordCount++;
+    recordCounts["testobject"]++;
     var record = {
-        "name": "test record #" + recordCount + ", userid=" + sessionData.id,
+        "name": "test record #" + recordCounts["testobject"] + ", userid=" + sessionData.id,
         "OwnerId": sessionData.id
     };
     record.curr = amt + offset;
@@ -102,7 +111,7 @@ function createOne(offset, amt) {
     record.pick = size;
     record.str = size;
     if (dbInfo.generateIds) {
-        var id = recordCount;
+        var id = recordCounts["testobject"];
         record[dbInfo.idField] = formatJsonId(id);
     }
     return record;
@@ -140,38 +149,38 @@ function simpleCreateTest() {
 
     var result, params;
 
-    deleteAllRecords();
-    checkRecordCount(0);
+    deleteAllRecords("testobject");
+    checkRecordCount("testobject", 0);
 
     params = createParams("data_record_array", createBatch(10));
-    result = createRecords(params);
+    result = createRecords("testobject", params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 10, "Create 10 records (data_record_array)", result);
-    checkRecordCount(10);
+    checkRecordCount("testobject", 10);
 
     params = createParams("data_record_array", createBatch(1));
-    result = createRecords(params);
+    result = createRecords("testobject", params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 1, "Create 1 record (data_record_array)", result);
-    checkRecordCount(11);
+    checkRecordCount("testobject", 11);
 
     params = createParams("data_record_object", createOne(0, 2000));
-    result = createRecords(params);
+    result = createRecords("testobject", params);
     checkResult(result.error === null && result.data, "Create 1 record (data_record_object)", result);
-    checkRecordCount(12);
+    checkRecordCount("testobject", 12);
 
     var data = createOne(0, 2000);
     data.OwnerId = userData.record[0].id;
     params = createParams("data_record_object", data);
-    result = createRecords(params);
+    result = createRecords("testobject", params);
     checkResult(result.error === null && result.data, "Create 1 record with another user's OwnerId (data_record_object)", result);
-    checkRecordCount(13);
+    checkRecordCount("testobject", 13);
 
     if (serviceData.record[0].type !== "NoSQL DB") {
         var data = createOne(0, 2000);
         delete data.OwnerId;
         params = createParams("data_record_object", data);
-        result = createRecords(params);
+        result = createRecords("testobject", params);
         checkResult(result.error, "Try to create 1 record with no OwnerId (data_record_object)", result);
-        checkRecordCount(13);
+        checkRecordCount("testobject", 13);
     }
 }
 
@@ -181,42 +190,42 @@ function simpleGetTest() {
 
     var result, params;
 
-    deleteAllRecords();
-    checkRecordCount(0);
+    deleteAllRecords("testobject");
+    checkRecordCount("testobject", 0);
 
     // create records
     params = createParams("data_record_array", createBatch(20));
-    result = createRecords(params);
+    result = createRecords("testobject", params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 20, "Create 20 records (data_record_array)", result);
-    checkRecordCount(20);
+    checkRecordCount("testobject", 20);
 
     // get records using various methods
-    params = getParamsByIds("data_record_array", [0,1]);
+    params = getParamsByIds("testobject", "data_record_array", [0,1]);
     result = getRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Get 2 records (data_record_array)", result);
 
-    params = getParamsByIds("data_record_object", [2]);
+    params = getParamsByIds("testobject", "data_record_object", [2]);
     result = getRecords(params);
     checkResult(result.error === null && result.data, "Get 1 record (data_record_object)", result);
 
-    params = getParamsByIds("data_idlist_array", [3,4]);
+    params = getParamsByIds("testobject", "data_idlist_array", [3,4]);
     result = getRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Get 2 records (data_idlist_array)", result);
 
-    params = getParamsByIds("data_idlist_string", [5,6]);
+    params = getParamsByIds("testobject", "data_idlist_string", [5,6]);
     result = getRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Get 2 records (data_idlist_string)", result);
 
-    params = getParamsByIds("param_idlist_string", [7,8]);
+    params = getParamsByIds("testobject", "param_idlist_string", [7,8]);
     result = getRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Get 2 records (param_idlist_string)", result);
 
-    params = getParamsByIds("url_id", [9]);
+    params = getParamsByIds("testobject", "url_id", [9]);
     result = getRecords(params);
     checkResult(result.error === null && result.data, "Get 1 record (url_id)", result);
 
     // AND filter
-    params = getParamsByFilter("data_filter", {"cond":[{"field": "curr","op": ">=","value": 2000},{"field": "curr","op": "<=","value": 2004}],"logic":"and"});
+    params = getParamsByFilter("testobject", "data_filter", {"cond":[{"field": "curr","op": ">=","value": 2000},{"field": "curr","op": "<=","value": 2004}],"logic":"and"});
     result = getRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 5, "Get records with AND filter", result);
     $.each(result.data.record, function(index, record) {
@@ -224,19 +233,19 @@ function simpleGetTest() {
     });
 
     if (serviceData.record[0].storage_type !== "aws dynamodb") {
-        params = getParamsByFilter("data_filter", idFilter([10,11]));
+        params = getParamsByFilter("testobject", "data_filter", idFilter("testobject",[10,11]));
         result = getRecords(params);
         checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Get 2 records (data_filter)", result);
 
-        params = getParamsByFilter("param_filter", idFilter([12,13]));
+        params = getParamsByFilter("testobject", "param_filter", idFilter("testobject",[12,13]));
         result = getRecords(params);
         checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Get 2 records (param_filter)", result);
 
-        params = getParamsByFilter("data_filter_replace", idFilter([14,15]));
+        params = getParamsByFilter("testobject", "data_filter_replace", idFilter("testobject",[14,15]));
         result = getRecords(params);
         checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Get 2 records (data_filter_replace)", result);
 
-        params = getParamsByFilter("param_filter_replace", idFilter([16,17,18,19]));
+        params = getParamsByFilter("testobject", "param_filter_replace", idFilter("testobject",[16,17,18,19]));
         result = getRecords(params);
         checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 4, "Get 4 records (param_filter_replace)", result);
     }
@@ -258,54 +267,54 @@ function simpleUpdateTest() {
 
     var result, params;
 
-    deleteAllRecords();
-    checkRecordCount(0);
+    deleteAllRecords("testobject");
+    checkRecordCount("testobject", 0);
 
     // create records
     params = createParams("data_record_array", createBatch(20));
-    result = createRecords(params);
+    result = createRecords("testobject", params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 20, "Create 20 records (data_record_array)", result);
-    checkRecordCount(20);
+    checkRecordCount("testobject", 20);
 
     // update records using various methods
-    params = updateParamsByIds("data_record_array", updateOne(), [0,1]);
+    params = updateParamsByIds("testobject", "data_record_array", updateOne(), [0,1]);
     result = updateRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "PATCH 2 records (data_record_array)", result);
 
-    params = updateParamsByIds("data_record_object", updateOne(), [2]);
+    params = updateParamsByIds("testobject", "data_record_object", updateOne(), [2]);
     result = updateRecords(params);
     checkResult(result.error === null && result.data, "PATCH 1 record (data_record_object)", result);
 
-    params = updateParamsByIds("data_idlist_array", updateOne(), [3,4]);
+    params = updateParamsByIds("testobject", "data_idlist_array", updateOne(), [3,4]);
     result = updateRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "PATCH 2 records (data_idlist_array)", result);
 
-    params = updateParamsByIds("data_idlist_string", updateOne(), [5,6]);
+    params = updateParamsByIds("testobject", "data_idlist_string", updateOne(), [5,6]);
     result = updateRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "PATCH 2 records (data_idlist_string)", result);
 
-    params = updateParamsByIds("param_idlist_string", updateOne(), [7,8]);
+    params = updateParamsByIds("testobject", "param_idlist_string", updateOne(), [7,8]);
     result = updateRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "PATCH 2 records (param_idlist_string)", result);
 
-    params = updateParamsByIds("url_id", updateOne(), [9]);
+    params = updateParamsByIds("testobject", "url_id", updateOne(), [9]);
     result = updateRecords(params);
     checkResult(result.error === null && result.data, "PATCH 1 record (url_id)", result);
 
     if (serviceData.record[0].storage_type !== "aws dynamodb") {
-        params = updateParamsByFilter("data_filter", updateOne(), idFilter([10,11]));
+        params = updateParamsByFilter("testobject", "data_filter", updateOne(), idFilter("testobject",[10,11]));
         result = updateRecords(params);
         checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "PATCH 2 records (data_filter)", result);
 
-        params = updateParamsByFilter("param_filter", updateOne(), idFilter([12,13]));
+        params = updateParamsByFilter("testobject", "param_filter", updateOne(), idFilter("testobject",[12,13]));
         result = updateRecords(params);
         checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "PATCH 2 records (param_filter)", result);
 
-        params = updateParamsByFilter("data_filter_replace", updateOne(), idFilter([14,15]));
+        params = updateParamsByFilter("testobject", "data_filter_replace", updateOne(), idFilter("testobject",[14,15]));
         result = updateRecords(params);
         checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "PATCH 2 records (data_filter_replace)", result);
 
-        params = updateParamsByFilter("param_filter_replace", updateOne(), idFilter([16,17,18,19]));
+        params = updateParamsByFilter("testobject", "param_filter_replace", updateOne(), idFilter("testobject",[16,17,18,19]));
         result = updateRecords(params);
         checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 4, "PATCH 4 records (param_filter_replace)", result);
     }
@@ -342,23 +351,23 @@ function simplePutTest() {
 
     var result, params, saveData;
 
-    deleteAllRecords();
-    checkRecordCount(0);
+    deleteAllRecords("testobject");
+    checkRecordCount("testobject", 0);
 
     // create records
     params = createParams("data_record_array", createBatch(20));
-    result = createRecords(params);
+    result = createRecords("testobject", params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 20, "Create 20 records (data_record_array)", result);
-    checkRecordCount(20);
+    checkRecordCount("testobject", 20);
     saveData = result.data;
     checkResult(saveData.record[0].updated === undefined && saveData.record[1].updated === undefined, "Verify 'updated' field not present", result);
 
-    params = updateParamsByIds("data_record_batch", batchByIds(saveData, getIdArray([0,1])), [0,1]);
+    params = updateParamsByIds("testobject", "data_record_batch", batchByIds(saveData, getIdArray("testobject", [0,1])), [0,1]);
     params.put = true;
     result = updateRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "PUT 2 records (data_record_batch)", result);
 
-    params = getParamsByIds("data_record_array", [0]);
+    params = getParamsByIds("testobject", "data_record_array", [0]);
     result = getRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 1, "Get updated record", result);
     checkResult(result.data.record[0].updated === 1 || result.data.record[0].updated === true, "Verify 'updated' field", result);
@@ -372,66 +381,66 @@ function simpleDeleteTest() {
 
     var result, params;
 
-    deleteAllRecords();
-    checkRecordCount(0);
+    deleteAllRecords("testobject");
+    checkRecordCount("testobject", 0);
 
     // create records
     params = createParams("data_record_array", createBatch(20));
-    result = createRecords(params);
+    result = createRecords("testobject", params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 20, "Create 20 records (data_record_array)", result);
-    checkRecordCount(20);
+    checkRecordCount("testobject", 20);
 
     // delete records using various methods
-    params = deleteParamsByIds("data_record_array", [0,1]);
+    params = deleteParamsByIds("testobject", "data_record_array", [0,1]);
     result = deleteRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Delete 2 records", result);
-    checkRecordCount(18);
+    checkRecordCount("testobject", 18);
 
-    params = deleteParamsByIds("data_record_array", [2]);
+    params = deleteParamsByIds("testobject", "data_record_array", [2]);
     result = deleteRecords(params);
     checkResult(result.error === null && result.data, "Delete 1 record", result);
-    checkRecordCount(17);
+    checkRecordCount("testobject", 17);
 
-    params = deleteParamsByIds("data_idlist_array", [3,4]);
+    params = deleteParamsByIds("testobject", "data_idlist_array", [3,4]);
     result = deleteRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Delete 2 records", result);
-    checkRecordCount(15);
+    checkRecordCount("testobject", 15);
 
-    params = deleteParamsByIds("data_idlist_string", [5,6]);
+    params = deleteParamsByIds("testobject", "data_idlist_string", [5,6]);
     result = deleteRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Delete 2 records", result);
-    checkRecordCount(13);
+    checkRecordCount("testobject", 13);
 
-    params = deleteParamsByIds("param_idlist_string", [7,8]);
+    params = deleteParamsByIds("testobject", "param_idlist_string", [7,8]);
     result = deleteRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Delete 2 records", result);
-    checkRecordCount(11);
+    checkRecordCount("testobject", 11);
 
-    params = deleteParamsByIds("url_id", [9]);
+    params = deleteParamsByIds("testobject", "url_id", [9]);
     result = deleteRecords(params);
     checkResult(result.error === null && result.data , "Delete 1 record", result);
-    checkRecordCount(10);
+    checkRecordCount("testobject", 10);
 
     if (serviceData.record[0].storage_type !== "aws dynamodb") {
-        params = deleteParamsByFilter("data_filter", idFilter([10,11]));
+        params = deleteParamsByFilter("testobject", "data_filter", idFilter("testobject",[10,11]));
         result = deleteRecords(params);
         checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Delete 2 records (data_filter)", result);
-        checkRecordCount(8);
+        checkRecordCount("testobject", 8);
 
-        params = deleteParamsByFilter("param_filter", idFilter([12,13]));
+        params = deleteParamsByFilter("testobject", "param_filter", idFilter("testobject",[12,13]));
         result = deleteRecords(params);
         checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Delete 2 records (param_filter)", result);
-        checkRecordCount(6);
+        checkRecordCount("testobject", 6);
 
-        params = deleteParamsByFilter("data_filter_replace", idFilter([14,15]));
+        params = deleteParamsByFilter("testobject", "data_filter_replace", idFilter("testobject",[14,15]));
         result = deleteRecords(params);
         checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Delete 2 records (data_filter_replace)", result);
-        checkRecordCount(4);
+        checkRecordCount("testobject", 4);
 
-        params = deleteParamsByFilter("param_filter_replace", idFilter([16,17,18,19]));
+        params = deleteParamsByFilter("testobject", "param_filter_replace", idFilter("testobject",[16,17,18,19]));
         result = deleteRecords(params);
         checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 4, "Delete 4 records (param_filter_replace)", result);
-        checkRecordCount(0);
+        checkRecordCount("testobject", 0);
     }
 }
 
@@ -442,64 +451,64 @@ function ownerIdTest() {
     console.log("Starting ownerIdTest()");
 
     adminLogin();
-    deleteAllRecords();
-    checkRecordCount(0);
+    deleteAllRecords("testobject");
+    checkRecordCount("testobject", 0);
     result = updateRoles('ownerid');
     checkResult(result.error === null, "Set roles to OwnerId mode", result);
 
     // CREATE
 
     params = createParams("data_record_array", createBatch(10));
-    result = createRecords(params);
+    result = createRecords("testobject", params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 10, "Create 10 records as admin", result);
-    checkRecordCount(10);
+    checkRecordCount("testobject", 10);
 
     userLogout();
     user1Login();
 
-    checkRecordCount(0);
+    checkRecordCount("testobject", 0);
     params = createParams("data_record_array", createBatch(5));
-    result = createRecords(params);
+    result = createRecords("testobject", params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 5, "Create 5 records as user 1", result);
-    checkRecordCount(5);
+    checkRecordCount("testobject", 5);
 
     userLogout();
     user2Login();
 
-    checkRecordCount(0);
+    checkRecordCount("testobject", 0);
     params = createParams("data_record_array", createBatch(5));
-    result = createRecords(params);
+    result = createRecords("testobject", params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 5, "Create 5 records as user 2", result);
-    checkRecordCount(5);
+    checkRecordCount("testobject", 5);
 
     userLogout();
     user2Login();
 
     // GET
 
-    params = getParamsByIds("param_idlist_string", [0]);
+    params = getParamsByIds("testobject", "param_idlist_string", [0]);
     result = getRecords(params);
     checkResult(result.error !== null, "Try to get 1 admin record as user 2", result);
 
-    params = getParamsByIds("param_idlist_string", [10]);
+    params = getParamsByIds("testobject", "param_idlist_string", [10]);
     result = getRecords(params);
     checkResult(result.error !== null, "Try to get 1 user 1 record as user 2", result);
 
-    params = getParamsByIds("param_idlist_string", [15,10,17,11,19]);
+    params = getParamsByIds("testobject", "param_idlist_string", [15,10,17,11,19]);
     params.queryParams += "&continue=true";
     result = getRecords(params);
     checkResult(result.rawError && result.rawError.error && result.rawError.error[0].context &&
         result.rawError.error[0].context.error && result.rawError.error[0].context.error.join(",") === "1,3" &&
-        result.rawError.error[0].context.record && result.rawError.error[0].context.record[0][dbInfo.idField] === createdRecords[15][dbInfo.idField] &&
-        result.rawError.error[0].context.record && result.rawError.error[0].context.record[2][dbInfo.idField] === createdRecords[17][dbInfo.idField] &&
-        result.rawError.error[0].context.record && result.rawError.error[0].context.record[4][dbInfo.idField] === createdRecords[19][dbInfo.idField],
+        result.rawError.error[0].context.record && result.rawError.error[0].context.record[0][dbInfo.idField] === createdRecords["testobject"][15][dbInfo.idField] &&
+        result.rawError.error[0].context.record && result.rawError.error[0].context.record[2][dbInfo.idField] === createdRecords["testobject"][17][dbInfo.idField] &&
+        result.rawError.error[0].context.record && result.rawError.error[0].context.record[4][dbInfo.idField] === createdRecords["testobject"][19][dbInfo.idField],
         "Try to get 5 user 2 records as user 2 with two user 1 record ids (continue=true)", result);
 
-    params = getParamsByIds("param_idlist_string", [15,10,17,11,19]);
+    params = getParamsByIds("testobject", "param_idlist_string", [15,10,17,11,19]);
     result = getRecords(params);
     checkResult(result.rawError && result.rawError.error && result.rawError.error[0].context &&
         result.rawError.error[0].context.error && result.rawError.error[0].context.error.join(",") === "1" &&
-        result.rawError.error[0].context.record && result.rawError.error[0].context.record[0][dbInfo.idField] === createdRecords[15][dbInfo.idField],
+        result.rawError.error[0].context.record && result.rawError.error[0].context.record[0][dbInfo.idField] === createdRecords["testobject"][15][dbInfo.idField],
         "Try to get 5 user 2 records as user 2 with two user 1 record ids (continue=false)", result);
 
     userLogout();
@@ -507,40 +516,40 @@ function ownerIdTest() {
 
     // UPDATE
 
-    params = updateParamsByIds("data_record_array", updateOne(), [10,11,12,13,14]);
+    params = updateParamsByIds("testobject", "data_record_array", updateOne(), [10,11,12,13,14]);
     result = updateRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 5, "Update 5 records as user 1", result);
 
     userLogout();
     user2Login();
 
-    params = updateParamsByIds("data_record_array", updateOne(), [15,16,17,18,19]);
+    params = updateParamsByIds("testobject", "data_record_array", updateOne(), [15,16,17,18,19]);
     result = updateRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 5, "Update 5 records as user 2", result);
 
-    params = updateParamsByIds("data_record_array", updateOne(), [0]);
+    params = updateParamsByIds("testobject", "data_record_array", updateOne(), [0]);
     result = updateRecords(params);
     checkResult(result.error !== null, "Try to update 1 admin record as user 2", result);
 
-    params = updateParamsByIds("data_record_array", updateOne(), [10]);
+    params = updateParamsByIds("testobject", "data_record_array", updateOne(), [10]);
     result = updateRecords(params);
     checkResult(result.error !== null, "Try to update 1 user 1 record as user 2", result);
 
-    params = updateParamsByIds("data_record_array", updateOne(), [15,10,17,11,19]);
+    params = updateParamsByIds("testobject", "data_record_array", updateOne(), [15,10,17,11,19]);
     params.queryParams += "&continue=true";
     result = updateRecords(params);
     checkResult(result.rawError && result.rawError.error && result.rawError.error[0].context &&
         result.rawError.error[0].context.error && result.rawError.error[0].context.error.join(",") === "1,3" &&
-        result.rawError.error[0].context.record && result.rawError.error[0].context.record[0][dbInfo.idField] == createdRecords[15][dbInfo.idField] &&
-        result.rawError.error[0].context.record && result.rawError.error[0].context.record[2][dbInfo.idField] == createdRecords[17][dbInfo.idField] &&
-        result.rawError.error[0].context.record && result.rawError.error[0].context.record[4][dbInfo.idField] == createdRecords[19][dbInfo.idField], // === fails due to id being string
+        result.rawError.error[0].context.record && result.rawError.error[0].context.record[0][dbInfo.idField] == createdRecords["testobject"][15][dbInfo.idField] &&
+        result.rawError.error[0].context.record && result.rawError.error[0].context.record[2][dbInfo.idField] == createdRecords["testobject"][17][dbInfo.idField] &&
+        result.rawError.error[0].context.record && result.rawError.error[0].context.record[4][dbInfo.idField] == createdRecords["testobject"][19][dbInfo.idField], // === fails due to id being string
         "Try to update 5 user 2 records as user 2 with two user 1 record ids (continue=true)", result);
 
-    params = updateParamsByIds("data_record_array", updateOne(), [15,10,17,11,19]);
+    params = updateParamsByIds("testobject", "data_record_array", updateOne(), [15,10,17,11,19]);
     result = updateRecords(params);
     checkResult(result.rawError && result.rawError.error && result.rawError.error[0].context &&
         result.rawError.error[0].context.error && result.rawError.error[0].context.error.join(",") === "1" &&
-        result.rawError.error[0].context.record && result.rawError.error[0].context.record[0][dbInfo.idField] == createdRecords[15][dbInfo.idField], // === fails due to id being string
+        result.rawError.error[0].context.record && result.rawError.error[0].context.record[0][dbInfo.idField] == createdRecords["testobject"][15][dbInfo.idField], // === fails due to id being string
         "Try to update 5 user 2 records as user 2 with two user 1 record ids (continue=false)", result);
 
     userLogout();
@@ -548,50 +557,50 @@ function ownerIdTest() {
 
     // DELETE
 
-    params = deleteParamsByIds("data_record_array", [0,1,2,3,4,5,6,7,8,9]);
+    params = deleteParamsByIds("testobject", "data_record_array", [0,1,2,3,4,5,6,7,8,9]);
     result = deleteRecords(params);
     checkResult(result.error !== null, "Try to delete admin records as user 1", result);
 
-    params = deleteParamsByIds("data_record_array", [15,16,17,18,19]);
+    params = deleteParamsByIds("testobject", "data_record_array", [15,16,17,18,19]);
     params.queryParams += "&continue=true";
     result = deleteRecords(params);
     checkResult(result.error !== null, "Try to delete user 2 records as user 1 (continue=true)", result);
 
-    params = deleteParamsByIds("data_record_array", [15,16,17,18,19]);
+    params = deleteParamsByIds("testobject", "data_record_array", [15,16,17,18,19]);
     result = deleteRecords(params);
     checkResult(result.error !== null, "Try to delete user 2 records as user 1 (continue=false)", result);
 
     // delete records as user 1, throw in some user 2 records
-    checkRecordCount(5);
-    params = deleteParamsByIds("data_record_array", [10,15,12,18,14]);
+    checkRecordCount("testobject", 5);
+    params = deleteParamsByIds("testobject", "data_record_array", [10,15,12,18,14]);
     params.queryParams += "&continue=true";
     result = deleteRecords(params);
     checkResult(result.error !== null, "Try to delete 3 user 1 records and 2 user 2 records as user 1 (continue=true)", result);
-    checkRecordCount(2);
+    checkRecordCount("testobject", 2);
 
-    params = deleteParamsByIds("data_record_array", [11,13]);
+    params = deleteParamsByIds("testobject", "data_record_array", [11,13]);
     result = deleteRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Delete 2 records as user 1", result);
-    checkRecordCount(0);
+    checkRecordCount("testobject", 0);
 
     userLogout();
     user2Login();
 
     // delete records as user 2
-    checkRecordCount(5);
-    params = deleteParamsByIds("data_record_array", [15,16,17,18,19]);
+    checkRecordCount("testobject", 5);
+    params = deleteParamsByIds("testobject", "data_record_array", [15,16,17,18,19]);
     result = deleteRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 5, "Delete 5 records as user 2", result);
-    checkRecordCount(0);
+    checkRecordCount("testobject", 0);
 
     userLogout();
     adminLogin();
 
-    checkRecordCount(10);
-    params = deleteParamsByIds("data_record_array", [0,1,2,3,4,5,6,7,8,9]);
+    checkRecordCount("testobject", 10);
+    params = deleteParamsByIds("testobject", "data_record_array", [0,1,2,3,4,5,6,7,8,9]);
     result = deleteRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 10, "Delete 10 records as admin", result);
-    checkRecordCount(0);
+    checkRecordCount("testobject", 0);
 
     userLogout();
 }
@@ -603,30 +612,30 @@ function valueTest(mode) {
     console.log("Starting valueTest(" + mode + ")");
 
     adminLogin();
-    deleteAllRecords();
-    checkRecordCount(0);
+    deleteAllRecords("testobject");
+    checkRecordCount("testobject", 0);
     result = updateRoles(mode);
     checkResult(result.error === null, "Set roles to " + mode + " mode", result);
 
     params = createParams("data_record_array", createBatch(3, 0));
-    result = createRecords(params);
+    result = createRecords("testobject", params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 3, "Create 3 records as admin for user 1", result);
-    checkRecordCount(3);
+    checkRecordCount("testobject", 3);
 
     params = createParams("data_record_array", createBatch(4, 1000));
-    result = createRecords(params);
+    result = createRecords("testobject", params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 4, "Create 4 records as admin for user 2", result);
-    checkRecordCount(7);
+    checkRecordCount("testobject", 7);
 
     params = createParams("data_record_array", createBatch(3, 2000));
-    result = createRecords(params);
+    result = createRecords("testobject", params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 3, "Create 3 records as admin for admin", result);
-    checkRecordCount(10);
+    checkRecordCount("testobject", 10);
 
     userLogout();
     user1Login();
 
-    params = getParamsByIds("data_record_array", []);
+    params = getParamsByIds("testobject", "data_record_array", []);
     result = getRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 3, "Verify 3 records for user 1", result);
     $.each(result.data.record, function(index, record) {
@@ -634,33 +643,33 @@ function valueTest(mode) {
     });
 
     params = createParams("data_record_object", createOne(0, 2000));
-    result = createRecords(params);
+    result = createRecords("testobject", params);
     checkResult(result.error, "Try to create admin record as user 1", result);
 
-    params = updateParamsByIds("data_record_object", updateOne(), [9]);
+    params = updateParamsByIds("testobject", "data_record_object", updateOne(), [9]);
     result = updateRecords(params);
     checkResult(result.error, "Try to update admin record as user 1", result);
 
-    params = deleteParamsByIds("data_record_array", [9]);
+    params = deleteParamsByIds("testobject", "data_record_array", [9]);
     result = deleteRecords(params);
     checkResult(result.error, "Try to delete admin record as user 1", result);
 
     params = createParams("data_record_object", createOne(0, 1000));
-    result = createRecords(params);
+    result = createRecords("testobject", params);
     checkResult(result.error, "Try to create user 2 record as user 1", result);
 
-    params = updateParamsByIds("data_record_object", updateOne(), [5]);
+    params = updateParamsByIds("testobject", "data_record_object", updateOne(), [5]);
     result = updateRecords(params);
     checkResult(result.error, "Try to update user 2 record as user 1", result);
 
-    params = deleteParamsByIds("data_record_array", [5]);
+    params = deleteParamsByIds("testobject", "data_record_array", [5]);
     result = deleteRecords(params);
     checkResult(result.error, "Try to delete user 2 record as user 1", result);
 
     userLogout();
     user2Login();
 
-    params = getParamsByIds("data_record_array", []);
+    params = getParamsByIds("testobject", "data_record_array", []);
     result = getRecords(params);
     checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 4, "Verify 4 records for user 2", result);
     $.each(result.data.record, function(index, record) {
@@ -677,8 +686,8 @@ function rollbackTest() {
     console.log("Starting rollbackTest()");
 
     adminLogin();
-    deleteAllRecords();
-    checkRecordCount(0);
+    deleteAllRecords("testobject");
+    checkRecordCount("testobject", 0);
     result = updateRoles('number');
     checkResult(result.error === null, "Set roles to value mode", result);
 
@@ -690,18 +699,18 @@ function rollbackTest() {
     params.data.record[4].curr = 2000;
     params.data.record[7].curr = 2000;
     params.queryParams += "&rollback=true";
-    result = createRecords(params);
+    result = createRecords("testobject", params);
     checkResult(result.rawError && result.rawError.error && result.rawError.error[0].context && result.rawError.error[0].context.error && result.rawError.error[0].context.error.join(",") === "4", "Create 10 records with rollback, 2 bad records", result);
-    checkRecordCount(0);
+    checkRecordCount("testobject", 0);
 
     // create 10 records as user 1, only index 4 and 7 should fail
     params = createParams("data_record_array", createBatch(10, 0));
     params.data.record[4].curr = 2000;
     params.data.record[7].curr = 2000;
     params.queryParams += "&continue=true";
-    result = createRecords(params);
+    result = createRecords("testobject", params);
     checkResult(result.rawError && result.rawError.error && result.rawError.error[0].context && result.rawError.error[0].context.error && result.rawError.error[0].context.error.join(",") === "4,7", "Create 10 records with continue, 2 bad records", result);
-    checkRecordCount(8);
+    checkRecordCount("testobject", 8);
 
     userLogout();
 }
@@ -745,19 +754,19 @@ function userLogout() {
     sessionData = null;
 }
 
-function checkRecordCount(num) {
+function checkRecordCount(name, num) {
 
-    var result, params;
+    var params, result;
 
-    params = getParamsByIds("data_record_array", []);
+    params = getParamsByIds(name, "data_record_array", []);
     result = getRecords(params);
-    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === num, "Check for " + num + " records", result);
+    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === num, "Check for " + num + " " + name + " records", result);
 }
 
-function deleteAllRecords() {
+function deleteAllRecords(name) {
 
     var result;
 
-    var result = dropTable();
-    checkResult(result.error === null && result.data && result.data.success === true, "Delete all records", result);
+    result = truncateTable(name);
+    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 0, "Delete all " + name + " records", result);
 }

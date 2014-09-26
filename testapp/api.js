@@ -1,9 +1,14 @@
-var createdRecords, recordCount;
+var createdRecords, recordCounts, tableList;
 
 function initApi() {
 
-    createdRecords = [];
-    recordCount = 0;
+    createdRecords = {};
+    recordCounts = {};
+    tableList = ["testobject", "contact_info", "contact_group_relationship", "contact_group", "associated_contact", "contact"];
+    $.each(tableList, function( index, name ) {
+        createdRecords[name] = [];
+        recordCounts[name] = 0;
+    });
 }
 
 function login(params) {
@@ -78,7 +83,7 @@ function createParams(method, data) {
     return {"data":data, "queryParams":queryParams, "method":method};
 }
 
-function createRecords(params) {
+function createRecords(name, params) {
 
     var result = {"rawError": null, "error":null, "data":null};
     $.ajax({
@@ -86,7 +91,7 @@ function createRecords(params) {
         type: 'POST',
         dataType:  'json',
         contentType:'application/json',
-        url: hostUrl + "/rest/" + dbInfo.dbService + "/testobject?" + params.queryParams,
+        url: hostUrl + "/rest/" + dbInfo.dbService + "/" + name + "?" + params.queryParams,
         data: JSON.stringify(params.data),
         cache: false,
         async: false,
@@ -95,11 +100,11 @@ function createRecords(params) {
             switch (params.method) {
                 case "data_record_array":
                     $.each(response.record, function(index, record) {
-                        createdRecords.push(record);
+                        createdRecords[name].push(record);
                     });
                     break;
                 case "data_record_object":
-                    createdRecords.push(response);
+                    createdRecords[name].push(response);
                     break;
             }
         },
@@ -111,12 +116,12 @@ function createRecords(params) {
     return result;
 }
 
-function getParamsByIds(method, indices) {
+function getParamsByIds(name, method, indices) {
 
     var data = null;
     var queryParams = "";
-    var url = "/rest/" + dbInfo.dbService + "/testobject";
-    var ids = getIdArray(indices);
+    var url = "/rest/" + dbInfo.dbService + "/" + name;
+    var ids = getIdArray(name, indices);
     if (ids.length > 0) {
         switch (method) {
             case "data_record_array":
@@ -161,11 +166,11 @@ function getParamsByIds(method, indices) {
     return {"data":data, "queryParams":queryParams, "reqType":reqType, "url":url, "method":method};
 }
 
-function getParamsByFilter(method, filter) {
+function getParamsByFilter(name, method, filter) {
 
     var data = null;
     var queryParams = "";
-    var url = "/rest/" + dbInfo.dbService + "/testobject";
+    var url = "/rest/" + dbInfo.dbService + "/" + name;
     if (filter.cond.length > 0) {
         switch (method) {
             case "data_filter":
@@ -251,11 +256,12 @@ function getRecords(params) {
     return result;
 }
 
-function updateParamsByIds(method, newData, indices) {
+function updateParamsByIds(name, method, newData, indices) {
 
+    var data = null;
     var queryParams = "";
-    var url = "/rest/" + dbInfo.dbService + "/testobject";
-    var ids = getIdArray(indices);
+    var url = "/rest/" + dbInfo.dbService + "/" + name;
+    var ids = getIdArray(name, indices);
     switch (method) {
         case "data_record_batch":
             data = newData;
@@ -303,10 +309,11 @@ function updateParamsByIds(method, newData, indices) {
     return {"data":data, "queryParams":queryParams, "url":url, "method":method};
 }
 
-function updateParamsByFilter(method, newData, filter) {
+function updateParamsByFilter(name, method, newData, filter) {
 
+    var data = null;
     var queryParams = "";
-    var url = "/rest/" + dbInfo.dbService + "/testobject";
+    var url = "/rest/" + dbInfo.dbService + "/" + name;
     switch (method) {
         case "data_filter":
             data = {
@@ -392,12 +399,12 @@ function updateRecords(params) {
     return result;
 }
 
-function deleteParamsByIds(method, indices) {
+function deleteParamsByIds(name, method, indices) {
 
     var data = null;
     var queryParams = "";
-    var url = "/rest/" + dbInfo.dbService + "/testobject";
-    var ids = getIdArray(indices);
+    var url = "/rest/" + dbInfo.dbService + "/" + name;
+    var ids = getIdArray(name, indices);
     switch (method) {
         case "data_record_array":
             data = {"record": []};
@@ -428,11 +435,11 @@ function deleteParamsByIds(method, indices) {
     return {"data":data, "queryParams":queryParams, "url":url, "method":method};
 }
 
-function deleteParamsByFilter(method, filter) {
+function deleteParamsByFilter(name, method, filter) {
 
     var data = null;
     var queryParams = "";
-    var url = "/rest/" + dbInfo.dbService + "/testobject";
+    var url = "/rest/" + dbInfo.dbService + "/" + name;
     switch (method) {
         case "data_filter":
             data = {"filter": ""};
@@ -510,7 +517,7 @@ function deleteRecords(params) {
     return result;
 }
 
-function createTable() {
+function createTables() {
 
     var result = {"rawError":null, "error":null, "data":null};
     $.ajax({
@@ -554,7 +561,7 @@ function tableExists(name) {
 	return result.data !== null;
 }
 
-function deleteTable() {
+function deleteTable(name) {
 
     var result = {"rawError":null, "error":null, "data":null};
     $.ajax({
@@ -562,14 +569,14 @@ function deleteTable() {
         type: 'DELETE',
         dataType:'json',
         contentType:'application/json',
-        url: hostUrl + '/rest/' + dbInfo.dbService + '/_schema/testobject',
+        url: hostUrl + '/rest/' + dbInfo.dbService + '/_schema/' + name,
         data: "",
         cache:false,
         async: false,
         success:function (response) {
             result.data = response;
-            createdRecords = [];
-            recordCount = 0;
+            createdRecords[name] = [];
+            recordCounts[name] = 0;
         },
         error:function (response) {
             result.rawError = getErrorObject(response);
@@ -579,7 +586,7 @@ function deleteTable() {
     return result;
 }
 
-function dropLocalTable() {
+function truncateLocalTable(name) {
 
     var result = {"rawError":null, "error":null, "data":null};
 
@@ -588,7 +595,8 @@ function dropLocalTable() {
         type: 'DELETE',
         dataType:'json',
         contentType:'application/json',
-        url: hostUrl + '/rest/db/testobject?force=true',
+        //url: hostUrl + "/rest/db/" + name + "?force=true",
+        url: hostUrl + "/rest/db/" + name + "?filter=%27id!%3D0%27",
         data: "",
         cache:false,
         async: false,
@@ -606,7 +614,7 @@ function dropLocalTable() {
 
 // drop table for configured service
 
-function dropTable() {
+function truncateTable(name) {
 
     var result = {"rawError":null, "error":null, "data":null};
 
@@ -615,14 +623,15 @@ function dropTable() {
         type: 'DELETE',
         dataType:'json',
         contentType:'application/json',
-        url: hostUrl + '/rest/' + dbInfo.dbService + '/testobject?force=true',
+        //url: hostUrl + "/rest/" + dbInfo.dbService + "/" + name + "?force=true",
+        url: hostUrl + "/rest/" + dbInfo.dbService + "/" + name + "?filter=%27id!%3D0%27",
         data: "",
         cache:false,
         async: false,
         success:function (response) {
             result.data = response;
-            createdRecords = [];
-            recordCount = 0;
+            createdRecords[name] = [];
+            recordCounts[name] = 0;
         },
         error:function (response) {
             result.rawError = getErrorObject(response);
