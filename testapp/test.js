@@ -1,11 +1,9 @@
-var testCounter;
 var sessionData, userData, roleData, serviceData, appData;
 
 function initTest() {
 
     var result;
 
-    testCounter = 0;
     sessionData = null;
     userData = null;
     roleData = null;
@@ -66,9 +64,9 @@ function initTest() {
     userData = result.data;
 
 	// create tables
-    result = createTables();
-    checkResult(result.error === null, "Create tables", result);
-    $.each(tableList, function( index, name ) {
+    $.each(tableList.reverse(), function( index, name ) {
+        result = createTable(name);
+        checkResult(result.error === null, "Create db table " + name, result);
         result = tableExists(name);
         checkResult(result === true, "Verify db table " + name + " created", "Table " + name + " not created");
     });

@@ -1,10 +1,15 @@
-var createdRecords, recordCounts, tableList;
+var testCounter, createdRecords, recordCounts, tableList;
 
 function initApi() {
 
+    testCounter = 0;
     createdRecords = {};
     recordCounts = {};
-    tableList = ["testobject", "contact_info", "contact_group_relationship", "contact_group", "associated_contact", "contact"];
+    if (dbInfo.testRelated === true) {
+        tableList = ["testobject", "contact_info", "contact_group_relationship", "contact_group", "associated_contact", "contact"];
+    } else {
+        tableList = ["testobject", "contact"];
+    }
     $.each(tableList, function( index, name ) {
         createdRecords[name] = [];
         recordCounts[name] = 0;
@@ -517,7 +522,7 @@ function deleteRecords(params) {
     return result;
 }
 
-function createTables() {
+function createTable(name) {
 
     var result = {"rawError":null, "error":null, "data":null};
     $.ajax({
@@ -526,7 +531,7 @@ function createTables() {
         dataType:'json',
         contentType:'application/json',
         url: hostUrl + '/rest/' + dbInfo.dbService + '/_schema',
-        data: getSchema(),
+        data: getSchema(name),
         cache:false,
         async: false,
         success:function (response) {
@@ -642,9 +647,18 @@ function truncateTable(name) {
     return result;
 }
 
-function getSchema() {
+function getSchema(name) {
 
-    return JSON.stringify(testSchema);
+    var result = {
+        "table": []
+    };
+    var length = testSchema.table.length;
+    for (var i = 0; i < length; i++) {
+        if (testSchema.table[i].name === name) {
+            result.table.push(testSchema.table[i]);
+        }
+    }
+    return JSON.stringify(result);
 }
 
 function createUsers() {

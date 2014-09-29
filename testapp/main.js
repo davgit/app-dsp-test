@@ -14,7 +14,7 @@ function runApp() {
     console.log(getStartMsg(dbInfo));
     initApi();
     initTest();
-    if (serviceData.record[0].type !== "NoSQL DB") {
+    if (dbInfo.testRelated === true) {
         relatedTest();
     }
     crudTest();
@@ -39,6 +39,9 @@ function getStartMsg(info) {
     if (info.generateIds) {
         msg += " generateIds=" + info.generateIds;
     }
+    if (info.testRelated) {
+        msg += " testRelated=" + info.testRelated;
+    }
     return msg;
 }
 
@@ -53,6 +56,9 @@ function getSuccessMsg(info) {
     }
     if (info.generateIds) {
         msg += " generateIds=" + info.generateIds;
+    }
+    if (info.testRelated) {
+        msg += " testRelated=" + info.testRelated;
     }
     return msg;
 }
