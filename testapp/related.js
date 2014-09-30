@@ -89,17 +89,17 @@ function relatedCreateTest() {
 
     params = createParams("data_record_array", createContacts(10));
     result = createRecords("contact", params);
-    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 10, "Create 10 records (data_record_array)", result);
+    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 10, "Create 10 contacts and 45 contact_infos (data_record_array)", result);
     checkRecordCount("contact", 10);
 
     params = createParams("data_record_array", createGroups(2));
     result = createRecords("contact_group", params);
-    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Create 2 records (data_record_array)", result);
+    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Create 2 contact_groups (data_record_array)", result);
     checkRecordCount("contact_group", 2);
 
     params = createParams("data_record_array", createLinkers());
     result = createRecords("contact_group_relationship", params);
-    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 13, "Create 13 records (data_record_array)", result);
+    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 13, "Create 13 linkers (data_record_array)", result);
     checkRecordCount("contact_group_relationship", 13);
 }
 
@@ -113,7 +113,7 @@ function relatedGetTest() {
     params = getParamsByIds("contact", "data_record_array", []);
     params.queryParams += "&related=contact_infos_by_contact_id";
     result = getRecords(params);
-    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 10, "Get 10 records (data_record_array)", result);
+    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 10, "Get 10 contacts (data_record_array)", result);
     for (contact = 0; contact < result.data.record.length; contact++) {
         // check number of infos for each contact
         length = result.data.record[contact].contact_infos_by_contact_id.length;
@@ -130,7 +130,7 @@ function relatedGetTest() {
     params = getParamsByIds("contact", "data_record_array", []);
     params.queryParams += "&related=contact_group_relationships_by_contact_id";
     result = getRecords(params);
-    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 10, "Get 10 records (data_record_array)", result);
+    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 10, "Get 10 contacts (data_record_array)", result);
     for (contact = 0; contact < result.data.record.length; contact++) {
         // check number of linkers for each contact
         length = result.data.record[contact].contact_group_relationships_by_contact_id.length;
@@ -152,7 +152,7 @@ function relatedGetTest() {
     params = getParamsByIds("contact", "data_record_array", []);
     params.queryParams += "&related=contact_groups_by_contact_group_relationship";
     result = getRecords(params);
-    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 10, "Get 10 records (data_record_array)", result);
+    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 10, "Get 10 contacts (data_record_array)", result);
     for (contact = 0; contact < result.data.record.length; contact++) {
         // check number of groups for each contact
         length = result.data.record[contact].contact_groups_by_contact_group_relationship.length;
@@ -183,7 +183,7 @@ function relatedGetTest() {
     params = getParamsByIds("contact_group", "data_record_array", []);
     params.queryParams += "&related=contacts_by_contact_group_relationship";
     result = getRecords(params);
-    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Get 2 records (data_record_array)", result);
+    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Get 2 contact_groups (data_record_array)", result);
     for (group = 0; group < result.data.record.length; group++) {
         length = result.data.record[group].contacts_by_contact_group_relationship.length;
         if (group === 0) {
@@ -206,7 +206,7 @@ function relatedGetTest() {
     params = getParamsByIds("contact_group", "data_record_array", []);
     params.queryParams += "&related=contact_group_relationships_by_contact_group_id";
     result = getRecords(params);
-    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Get 2 records (data_record_array)", result);
+    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Get 2 contact_groups (data_record_array)", result);
     for (group = 0; group < result.data.record.length; group++) {
         length = result.data.record[group].contact_group_relationships_by_contact_group_id.length;
         if (group === 0) {
@@ -226,7 +226,7 @@ function relatedGetTest() {
     params = getParamsByIds("contact_info", "data_record_array", []);
     params.queryParams += "&related=contact_by_contact_id";
     result = getRecords(params);
-    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 45, "Get 45 records (data_record_array)", result);
+    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 45, "Get 45 contact_infos (data_record_array)", result);
     for (info = 0; info < result.data.record.length; info++) {
         contactId = result.data.record[info].contact_id;
         id = result.data.record[info].contact_by_contact_id.id;
@@ -237,7 +237,7 @@ function relatedGetTest() {
     params = getParamsByIds("contact_group_relationship", "data_record_array", []);
     params.queryParams += "&related=contact_by_contact_id";
     result = getRecords(params);
-    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 13, "Get 13 records (data_record_array)", result);
+    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 13, "Get 13 linkers (data_record_array)", result);
     for (linker = 0; linker < result.data.record.length; linker++) {
         contactId = result.data.record[linker].contact_id;
         id = result.data.record[linker].contact_by_contact_id.id;
@@ -248,7 +248,7 @@ function relatedGetTest() {
     params = getParamsByIds("contact_group_relationship", "data_record_array", []);
     params.queryParams += "&related=contact_group_by_contact_group_id";
     result = getRecords(params);
-    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 13, "Get 13 records (data_record_array)", result);
+    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 13, "Get 13 linkers (data_record_array)", result);
     for (linker = 0; linker < result.data.record.length; linker++) {
         groupId = result.data.record[linker].contact_group_id;
         id = result.data.record[linker].contact_group_by_contact_group_id.id;
@@ -258,24 +258,24 @@ function relatedGetTest() {
 
 function relatedUpdateTest() {
 
-    var params, result, i;
+    var params, result, i, response, newInfo, newInfoId;
 
     // get records and update to delete last child from each
     params = getParamsByIds("contact", "data_record_array", []);
     params.queryParams += "&related=contact_infos_by_contact_id";
     result = getRecords(params);
-    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 10, "Get 10 records (data_record_array)", result);
+    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 10, "Get 10 contacts (data_record_array)", result);
 
     // update
     for (i = 0; i < result.data.record.length; i++) {
-        result.data.record[i].reports_to = null;
+        //result.data.record[i].reports_to = null;
         var length = result.data.record[i].contact_infos_by_contact_id.length;
         if (length > 0) {
             result.data.record[i].contact_infos_by_contact_id[length - 1].contact_id = null;
             params = updateParamsByIds("contact", "url_id", result.data.record[i], [i]);
             params.queryParams += "&related=contact_infos_by_contact_id&allow_related_delete=true";
-            var response  = updateRecords(params);
-            checkResult(response.error === null, "PATCH 1 records (data_record_array)", response);
+            response = updateRecords(params);
+            checkResult(response.error === null, "PATCH contact " + (i + 1) + " to delete last contact_info (data_record_array)", response);
         }
     }
 
@@ -283,11 +283,57 @@ function relatedUpdateTest() {
     params = getParamsByIds("contact", "data_record_array", [0,1,2,3,4,5,6,7,8,9]);
     params.queryParams += "&related=contact_infos_by_contact_id";
     result = getRecords(params);
-    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 10, "Get 10 records (data_record_array)", result);
+    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 10, "Get 10 contacts (data_record_array)", result);
     for (i = 1; i < result.data.record.length; i++) {
-        checkResult(result.data.record[i].contact_infos_by_contact_id.length === i - 1, "Verify contact " + (i + 1) + " has " + (i - 1) + " child records", result);
+        checkResult(result.data.record[i].contact_infos_by_contact_id.length === i - 1, "Verify contact " + (i + 1) + " has " + (i - 1) + " contact_infos", result);
     }
 
+    // add a contact_info to contact 1
+    var newInfo = {
+        "info_type": "work",
+        "phone": "extra",
+        "email": "extra@acme.com",
+        "address": "1234 Demo Way",
+        "city": "ATLANTA",
+        "state": "GA",
+        "zip": "30303",
+        "country": "USA"
+    };
+    result.data.record[0].contact_infos_by_contact_id.push(newInfo);
+    recordCounts["contact_info"]++;
+    params = updateParamsByIds("contact", "url_id", result.data.record[0], [0]);
+    params.queryParams += "&related=contact_infos_by_contact_id";
+    result = updateRecords(params);
+    checkResult(response.error === null, "PATCH contact 1 to add a new contact_info (data_record_array)", result);
+
+    // verify contact_info added to contact 1
+    params = getParamsByIds("contact", "data_record_array", [0,1]);
+    params.queryParams += "&related=contact_infos_by_contact_id";
+    result = getRecords(params);
+    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 2, "Get 2 contacts (data_record_array)", result);
+    checkResult(result.data.record[0].contact_infos_by_contact_id.length === 1, "Verify contact 1 has 1 contact_info", result);
+
+    // assign new info to contact 2
+    newInfoId = result.data.record[0].contact_infos_by_contact_id[0].id;
+    result.data.record[1].contact_infos_by_contact_id.push({"id": newInfoId});
+    params = updateParamsByIds("contact", "data_record_object", result.data.record[1], [1]);
+    params.queryParams += "&related=contact_infos_by_contact_id";
+    result = updateRecords(params);
+    checkResult(result.error === null, "PATCH contact 2 to reassign contact_info (data_record_array)", result);
+
+    // check for 1 contact_info on contact 2
+    params = getParamsByIds("contact", "data_record_array", [1]);
+    params.queryParams += "&related=contact_infos_by_contact_id";
+    result = getRecords(params);
+    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 1, "Get 1 contact (data_record_array)", result);
+    checkResult(result.data.record[0].contact_infos_by_contact_id.length === 1, "Verify contact 2 has 1 contact_info", result);
+
+    // check for 0 contact_infos on contact 1
+    params = getParamsByIds("contact", "data_record_array", [0]);
+    params.queryParams += "&related=contact_infos_by_contact_id";
+    result = getRecords(params);
+    checkResult(result.error === null && result.data && result.data.record && result.data.record.length === 1, "Get 1 contact (data_record_array)", result);
+    checkResult(result.data.record[0].contact_infos_by_contact_id.length === 0, "Verify contact 1 has 0 contact_info", result);
 }
 
 function relatedDeleteTest() {
@@ -303,12 +349,12 @@ function relatedDeleteTest() {
     checkRecordCount("contact_group", 1);
     checkRecordCount("contact_group_relationship", 8);
 
-    // delete contact 3, should delete 1/35 contact_infos and 1/8 linkers
+    // delete contact 3, should delete 1/36 contact_infos and 1/8 linkers
     params = deleteParamsByIds("contact", "data_record_array", [2]);
     result = deleteRecords(params);
     checkResult(result.error === null && result.data, "Delete contact 3", result);
     checkRecordCount("contact", 9);
-    checkRecordCount("contact_info", 35);
+    checkRecordCount("contact_info", 36);
     checkRecordCount("contact_group_relationship", 7);
 
     // delete all contacts, should delete all contact_infos and linkers
