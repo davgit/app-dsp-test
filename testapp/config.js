@@ -1,8 +1,9 @@
-var hostUrl = "http://localhost";
+var hostUrl = "http://192.168.1.40";
 
 var dbList = [
 
-    {"dbService":"db", "idField":"id", "testRelated":true},
+    //{"dbService":"db", "idField":"id", "testRelated":true},
+    {"dbService":"oracle", "idField":"id", "idType": "int", "generateIds": true, "testRelated":true},
     //{"dbService":"remote", "idField":"id", "testRelated":true},
     //{"dbService":"sqlsrv_atl", "idField":"id", "testRelated":true},
     //{"dbService":"mongo", "idField":"_id"},

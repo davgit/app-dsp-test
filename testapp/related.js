@@ -1,6 +1,6 @@
 function createContacts(num) {
 
-    var data, record, contact, info;
+    var data, record, childRecord, contact, info, id;
 
     data = {"record":[]};
     for (contact = 0; contact < num; contact++) {
@@ -11,9 +11,13 @@ function createContacts(num) {
             "display_name": "Contact " + recordCounts["contact"],
             "contact_infos_by_contact_id": []
         };
+        if (dbInfo.generateIds) {
+            id = recordCounts["contact"];
+            record[dbInfo.idField] = formatJsonId(id);
+        }
         for (info = 0; info < contact; info++) {
             recordCounts["contact_info"]++;
-            record.contact_infos_by_contact_id.push({
+            var childRecord = {
                 "info_type": "work",
                 "phone": "contact " + recordCounts["contact"] + " info #" + (info + 1),
                 "email": "contact" + recordCounts["contact"] + "@acme.com",
@@ -22,7 +26,12 @@ function createContacts(num) {
                 "state": "GA",
                 "zip": "30303",
                 "country": "USA"
-            });
+            }
+            if (dbInfo.generateIds) {
+                id = recordCounts["contact_info"];
+                childRecord[dbInfo.idField] = formatJsonId(id);
+            }
+            record.contact_infos_by_contact_id.push(childRecord);
         }
         data.record.push(record);
     }
@@ -31,7 +40,7 @@ function createContacts(num) {
 
 function createGroups(num) {
 
-    var data, record, group;
+    var data, record, group, id;
 
     data = {"record":[]};
     for (group = 0; group < num; group++) {
@@ -40,6 +49,10 @@ function createGroups(num) {
             "name": "Group " + recordCounts["contact_group"],
             "description": "Test group #" + recordCounts["contact_group"]
         };
+        if (dbInfo.generateIds) {
+            id = recordCounts["contact_group"];
+            record[dbInfo.idField] = formatJsonId(id);
+        }
         data.record.push(record);
     }
     return data;
@@ -47,7 +60,7 @@ function createGroups(num) {
 
 function createLinkers() {
 
-    var data, record, contact;
+    var data, record, contact, id;
 
     data = {"record":[]};
     // assign contact ids 1-5 to group id 1
@@ -57,6 +70,10 @@ function createLinkers() {
             "contact_id": contact,
             "contact_group_id": 1
         };
+        if (dbInfo.generateIds) {
+            id = recordCounts["contact_group_relationship"];
+            record[dbInfo.idField] = formatJsonId(id);
+        }
         data.record.push(record);
     }
     // assign contact ids 3-10 to group id 2
@@ -66,6 +83,10 @@ function createLinkers() {
             "contact_id": contact,
             "contact_group_id": 2
         };
+        if (dbInfo.generateIds) {
+            id = recordCounts["contact_group_relationship"];
+            record[dbInfo.idField] = formatJsonId(id);
+        }
         data.record.push(record);
     }
     return data;
@@ -258,7 +279,7 @@ function relatedGetTest() {
 
 function relatedUpdateTest() {
 
-    var params, result, i, response, newInfo, newInfoId;
+    var params, result, i, response, newInfo, newInfoId, id;
 
     // get records and update to delete last child from each
     params = getParamsByIds("contact", "data_record_array", []);
@@ -289,6 +310,7 @@ function relatedUpdateTest() {
     }
 
     // add a contact_info to contact 1
+    recordCounts["contact_info"]++;
     var newInfo = {
         "info_type": "work",
         "phone": "extra",
@@ -299,8 +321,11 @@ function relatedUpdateTest() {
         "zip": "30303",
         "country": "USA"
     };
+    if (dbInfo.generateIds) {
+        id = recordCounts["contact_info"];
+        newInfo[dbInfo.idField] = formatJsonId(id);
+    }
     result.data.record[0].contact_infos_by_contact_id.push(newInfo);
-    recordCounts["contact_info"]++;
     params = updateParamsByIds("contact", "url_id", result.data.record[0], [0]);
     params.queryParams += "&related=contact_infos_by_contact_id";
     result = updateRecords(params);
