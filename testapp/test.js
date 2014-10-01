@@ -30,7 +30,7 @@ function initTest() {
     serviceData = result.data;
 
     // delete tables
-    $.each(tableList, function( index, name ) {
+    $.each(tableList.slice(0).reverse(), function( index, name ) {
         if (tableExists(name)) {
             result = deleteTable(name);
             checkResult(result.error === null, "Delete db table " + name, result);
@@ -64,7 +64,7 @@ function initTest() {
     userData = result.data;
 
 	// create tables
-    $.each(tableList.reverse(), function( index, name ) {
+    $.each(createList, function( index, name ) {
         result = createTable(name);
         checkResult(result.error === null, "Create db table " + name, result);
         result = tableExists(name);

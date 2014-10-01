@@ -1,16 +1,17 @@
-var testCounter, createdRecords, recordCounts, tableList;
+var testCounter, createdRecords, recordCounts, tableList, createList;
 
 function initApi() {
 
     testCounter = 0;
     createdRecords = {};
     recordCounts = {};
+    tableList = ["testobject", "contact", "associated_contact", "contact_group", "contact_group_relationship", "contact_info"];
     if (dbInfo.testRelated === true) {
-        tableList = ["testobject", "contact_info", "contact_group_relationship", "contact_group", "associated_contact", "contact"];
+        createList = tableList;
     } else {
-        tableList = ["testobject", "contact"];
+        createList = ["testobject", "contact"];
     }
-    $.each(tableList, function( index, name ) {
+    $.each(createList, function( index, name ) {
         createdRecords[name] = [];
         recordCounts[name] = 0;
     });
