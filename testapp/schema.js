@@ -52,32 +52,46 @@ var testSchema = {
                     "name": "CreatedById",
                     "label": "Created By ID",
                     "type": "user_id_on_create",
-                    "api_read_only": true
+                    "validation": {
+                        "api_read_only": {
+                            "on_fail": "ignore_field"
+                        }
+                    }
                 },
                 {
                     "name": "CreatedDate",
                     "label": "Created Date",
                     "type": "timestamp_on_create",
-                    "api_read_only": true
+                    "validation": {
+                        "api_read_only": {
+                            "on_fail": "ignore_field"
+                        }
+                    }
                 },
                 {
                     "name": "LastModifiedById",
                     "label": "Last Modified By ID",
                     "type": "user_id_on_update",
-                    "api_read_only": true
+                    "validation": {
+                        "api_read_only": {
+                            "on_fail": "ignore_field"
+                        }
+                    }
                 },
                 {
                     "name": "LastModifiedDate",
                     "label": "Last Modified Date",
                     "type": "timestamp_on_update",
-                    "api_read_only": true
+                    "validation": {
+                        "api_read_only": {
+                            "on_fail": "ignore_field"
+                        }
+                    }
                 },
                 {
                     "name": "OwnerId",
                     "label": "OwnerID",
-                    "type": "reference",
-                    "ref_table": "df_sys_user",
-                    "ref_field": "Id",
+                    "type": "user_id",
                     "allow_null": false
                 }
             ]
@@ -200,25 +214,41 @@ var testSchema = {
                     "name":       "created_date",
                     "label":      "Created On",
                     "type":       "timestamp_on_create",
-                    "validation": "api_read_only"
+                    "validation": {
+                        "api_read_only": {
+                            "on_fail": "ignore_field"
+                        }
+                    }
                 },
                 {
                     "name":       "last_modified_date",
                     "label":      "Last Modified On",
                     "type":       "timestamp_on_update",
-                    "validation": "api_read_only"
+                    "validation": {
+                        "api_read_only": {
+                            "on_fail": "ignore_field"
+                        }
+                    }
                 },
                 {
                     "name":       "created_by_id",
                     "label":      "Created By",
                     "type":       "user_id_on_create",
-                    "validation": "api_read_only"
+                    "validation": {
+                        "api_read_only": {
+                            "on_fail": "ignore_field"
+                        }
+                    }
                 },
                 {
                     "name":       "last_modified_by_id",
                     "label":      "Last Modified By",
                     "type":       "user_id_on_update",
-                    "validation": "api_read_only"
+                    "validation": {
+                        "api_read_only": {
+                            "on_fail": "ignore_field"
+                        }
+                    }
                 }
             ]
         },
@@ -354,25 +384,41 @@ var testSchema = {
                     "name":       "created_date",
                     "label":      "Created On",
                     "type":       "timestamp_on_create",
-                    "validation": "api_read_only"
+                    "validation": {
+                        "api_read_only": {
+                            "on_fail": "ignore_field"
+                        }
+                    }
                 },
                 {
                     "name":       "last_modified_date",
                     "label":      "Last Modified On",
                     "type":       "timestamp_on_update",
-                    "validation": "api_read_only"
+                    "validation": {
+                        "api_read_only": {
+                            "on_fail": "ignore_field"
+                        }
+                    }
                 },
                 {
                     "name":       "created_by_id",
                     "label":      "Created By",
                     "type":       "user_id_on_create",
-                    "validation": "api_read_only"
+                    "validation": {
+                        "api_read_only": {
+                            "on_fail": "ignore_field"
+                        }
+                    }
                 },
                 {
                     "name":       "last_modified_by_id",
                     "label":      "Last Modified By",
                     "type":       "user_id_on_update",
-                    "validation": "api_read_only"
+                    "validation": {
+                        "api_read_only": {
+                            "on_fail": "ignore_field"
+                        }
+                    }
                 }
             ]
         },
@@ -444,4 +490,4 @@ var testSchema = {
             ]
         }
     ]
-};
+}
